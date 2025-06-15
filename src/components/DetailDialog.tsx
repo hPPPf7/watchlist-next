@@ -51,8 +51,8 @@ export function DetailDialog({
     暫時追蹤狀態 === 'loading'
       ? true // 或 false，看你希望 loading 狀態時顯示哪個樣式
       : 暫時追蹤狀態 !== null
-      ? 暫時追蹤狀態
-      : 追蹤狀態?.[film?.tmdbId ?? -1] === true;
+        ? 暫時追蹤狀態
+        : 追蹤狀態?.[film?.tmdbId ?? -1] === true;
   const is處理中 = 暫時追蹤狀態 === 'loading' || 追蹤狀態?.[film?.tmdbId ?? -1] === 'loading';
   const [觀看日期, 設定觀看日期] = useState<Date | 'forgot' | null>(null);
   const [已確認, 設定已確認] = useState(false);
@@ -211,18 +211,42 @@ export function DetailDialog({
                           </div>
                         </div>
                         <div className="flex flex-1 flex-col space-y-4">
-                          <h2 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
-                            {film.title}
-                            {film.類型 === 'tv' && 詳細資料?.status && (
-                              <span className="rounded-full border border-zinc-600 bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300">
-                                {詳細資料.status === 'Returning Series'
-                                  ? '連載中'
-                                  : 詳細資料.status === 'Ended'
-                                  ? '已完結'
-                                  : '狀態不明'}
-                              </span>
+                          <div className="flex justify-between items-start">
+                            <h2 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
+                              {film.title}
+                              {film.類型 === 'tv' && 詳細資料?.status && (
+                                <span className="rounded-full border border-zinc-600 bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300">
+                                  {詳細資料.status === 'Returning Series'
+                                    ? '連載中'
+                                    : 詳細資料.status === 'Ended'
+                                      ? '已完結'
+                                      : '狀態不明'}
+                                </span>
+                              )}
+                            </h2>
+
+                            {/* 👉 加入/移除清單按鈕 */}
+                            {onToggleWatchlist && (
+                              <Button
+                                size="sm"
+                                className={
+                                  is追蹤中
+                                    ? 'bg-red-600 hover:bg-red-500 text-white'
+                                    : 'bg-purple-600 hover:bg-purple-500 text-white'
+                                }
+                                disabled={is處理中}
+                                onClick={async () => {
+                                  if (!film) return;
+                                  設定暫時追蹤狀態('loading');
+                                  await onToggleWatchlist(film);
+                                  設定暫時追蹤狀態(!is追蹤中);
+                                  onUpdated?.();
+                                }}
+                              >
+                                {is處理中 ? '處理中...' : is追蹤中 ? '移除清單' : '加入清單'}
+                              </Button>
                             )}
-                          </h2>
+                          </div>
 
                           {/* 類型＋年份 */}
                           <div className="text-sm text-zinc-400">
@@ -237,8 +261,8 @@ export function DetailDialog({
                                     : '影集｜?';
                                 })()
                               : 詳細資料?.release_date
-                              ? `電影｜${詳細資料.release_date.slice(0, 4)}`
-                              : '電影｜?'}
+                                ? `電影｜${詳細資料.release_date.slice(0, 4)}`
+                                : '電影｜?'}
                           </div>
 
                           {/* 時長＋國家＋語言 */}
@@ -365,8 +389,8 @@ export function DetailDialog({
                                     觀看日期 === 'forgot'
                                       ? 'forgot'
                                       : 觀看日期 instanceof Date
-                                      ? format(觀看日期, 'yyyy-MM-dd')
-                                      : null;
+                                        ? format(觀看日期, 'yyyy-MM-dd')
+                                        : null;
                                   await updateMovieWatchDate(film.tmdbId, formatted);
                                   設定已確認(true);
                                   toast.success('✅ 已儲存觀看紀錄');
