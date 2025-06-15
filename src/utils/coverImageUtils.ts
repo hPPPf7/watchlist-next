@@ -1,4 +1,4 @@
-// src/lib/coverImageUtils.ts
+// src/utils/coverImageUtils.ts
 
 import { tmdbFetch } from '@/lib/api';
 
