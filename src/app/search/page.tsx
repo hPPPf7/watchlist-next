@@ -6,15 +6,19 @@ import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchli
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { LastUpdatedHint } from '@/components/LastUpdatedHint';
 import { fetch推薦清單, searchTMDb, getTMDbDetail } from '@/lib/api';
-
 import { cn } from '@/lib/utils';
-
 import { Film } from '@/types/Film';
 import { SearchInputSection } from './components/SearchInputSection';
 import { SearchResultList } from './components/SearchResultList';
 import { RecommendList } from './components/RecommendList';
 import { EmptyState } from '@/components/EmptyState';
 import { useOpenDetail } from '@/hooks/useOpenDetail';
+import {
+  getPopularThisWeek,
+  getPopularWatchlistThisWeek,
+  logClick,
+  logAddToWatchlist,
+} from '@/lib/popular';
 
 export default function SearchPage() {
   const { 使用者 } = useUser();
@@ -39,6 +43,10 @@ export default function SearchPage() {
   const [當前Tab, 設定當前Tab] = useState<'movie' | 'tv'>('movie');
   const [錯誤動畫中, 設定錯誤動畫中] = useState(false);
   const [錯誤佇列, 設定錯誤佇列] = useState<string[]>([]);
+  const [大家都在看_movie, 設定大家都在看_movie] = useState<Film[]>([]);
+  const [大家都在看_tv, 設定大家都在看_tv] = useState<Film[]>([]);
+  const [大家感興趣_movie, 設定大家感興趣_movie] = useState<Film[]>([]);
+  const [大家感興趣_tv, 設定大家感興趣_tv] = useState<Film[]>([]);
 
   async function 搜尋影片(文字 = 關鍵字, 類型 = 篩選類型) {
     if (!文字.trim()) {
@@ -115,6 +123,7 @@ export default function SearchPage() {
         console.log('✅ 成功取消追蹤', film.tmdbId);
       } else {
         await addToWatchlist(film);
+        await logAddToWatchlist(film.tmdbId, film.類型);
         console.log('✅ 成功加入追蹤', film.tmdbId);
       }
 
@@ -179,10 +188,43 @@ export default function SearchPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [movieList, tvList] = await Promise.all([
+        const [movieList, tvList, 點擊_movie, 點擊_tv, 加入_movie, 加入_tv] = await Promise.all([
           fetch推薦清單('movie'),
           fetch推薦清單('tv'),
+          getPopularThisWeek('movie'),
+          getPopularThisWeek('tv'),
+          getPopularWatchlistThisWeek('movie'),
+          getPopularWatchlistThisWeek('tv'),
         ]);
+
+        const 處理詳細 = async (
+          清單: { tmdbId: string | number }[],
+          類型: 'movie' | 'tv',
+        ): Promise<Film[]> =>
+          await Promise.all(
+            清單.slice(0, 10).map(async (item) => {
+              const 詳細 = await getTMDbDetail(類型, Number(item.tmdbId)); // 保險起見這邊轉成 Number
+              return {
+                tmdbId: Number(item.tmdbId),
+                類型,
+                title: 詳細.title || 詳細.name,
+                year: (詳細.release_date || 詳細.first_air_date || '').slice(0, 4),
+                封面圖: 詳細.poster_path
+                  ? `https://image.tmdb.org/t/p/w500${詳細.poster_path}`
+                  : '/no-image.png',
+                背景圖: 詳細.backdrop_path
+                  ? `https://image.tmdb.org/t/p/w780${詳細.backdrop_path}`
+                  : '/no-backdrop.png',
+                詳細,
+              };
+            }),
+          );
+
+        設定大家都在看_movie(await 處理詳細(點擊_movie, 'movie'));
+        設定大家都在看_tv(await 處理詳細(點擊_tv, 'tv'));
+        設定大家感興趣_movie(await 處理詳細(加入_movie, 'movie'));
+        設定大家感興趣_tv(await 處理詳細(加入_tv, 'tv'));
+
         設定熱門電影_popular(movieList.popular);
         設定熱門電影_nowPlaying(movieList.nowPlaying);
         設定熱門電影_topRated(movieList.topRated);
@@ -223,6 +265,7 @@ export default function SearchPage() {
 
   const handleOpenDetail = useCallback(
     (film: Film) => {
+      logClick(film.tmdbId, film.類型);
       openDetail({
         film,
         from: 'search',
@@ -321,6 +364,67 @@ export default function SearchPage() {
                     }}
                     onClickFilm={handleOpenDetail}
                   />
+                  <div className="space-y-6">
+                    {/* 🔥 大家都在看 */}
+                    {大家都在看_movie.length > 0 && (
+                      <RecommendList
+                        標題="🔥 大家都在看（電影）"
+                        當前Tab="movie"
+                        熱門電影={{
+                          popular: 大家都在看_movie,
+                          nowPlaying: [],
+                          topRated: [],
+                          animation: [],
+                        }}
+                        熱門影集={{ popular: [], nowPlaying: [], topRated: [], animation: [] }}
+                        onClickFilm={handleOpenDetail}
+                      />
+                    )}
+                    {大家都在看_tv.length > 0 && (
+                      <RecommendList
+                        標題="🔥 大家都在看（影集）"
+                        當前Tab="tv"
+                        熱門電影={{ popular: [], nowPlaying: [], topRated: [], animation: [] }}
+                        熱門影集={{
+                          popular: 大家都在看_tv,
+                          nowPlaying: [],
+                          topRated: [],
+                          animation: [],
+                        }}
+                        onClickFilm={handleOpenDetail}
+                      />
+                    )}
+
+                    {/* 🌟 大家感興趣 */}
+                    {大家感興趣_movie.length > 0 && (
+                      <RecommendList
+                        標題="🌟 大家感興趣（電影）"
+                        當前Tab="movie"
+                        熱門電影={{
+                          popular: 大家感興趣_movie,
+                          nowPlaying: [],
+                          topRated: [],
+                          animation: [],
+                        }}
+                        熱門影集={{ popular: [], nowPlaying: [], topRated: [], animation: [] }}
+                        onClickFilm={handleOpenDetail}
+                      />
+                    )}
+                    {大家感興趣_tv.length > 0 && (
+                      <RecommendList
+                        標題="🌟 大家感興趣（影集）"
+                        當前Tab="tv"
+                        熱門電影={{ popular: [], nowPlaying: [], topRated: [], animation: [] }}
+                        熱門影集={{
+                          popular: 大家感興趣_tv,
+                          nowPlaying: [],
+                          topRated: [],
+                          animation: [],
+                        }}
+                        onClickFilm={handleOpenDetail}
+                      />
+                    )}
+                  </div>
                   <LastUpdatedHint lastUpdated={lastUpdated} />
                 </div>
               )}

@@ -7,6 +7,7 @@ import 'swiper/css';
 import { FilmCard } from '@/components/FilmCard';
 
 interface Props {
+  標題?: string;
   當前Tab: 'movie' | 'tv';
   熱門電影: {
     popular: Film[];

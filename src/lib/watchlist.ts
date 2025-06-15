@@ -3,6 +3,8 @@ import { doc, getDoc, setDoc, updateDoc, deleteField } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth';
 import type { Film } from '@/types/Film';
 import { getTMDbDetail } from './api';
+import { logAddToWatchlist } from './popular';
+import { Timestamp } from 'firebase/firestore';
 
 function getCurrentUser() {
   const auth = getAuth();
@@ -73,6 +75,7 @@ export async function addToWatchlist(film: Film): Promise<void> {
   };
 
   await setDoc(ref, { 追蹤清單: watchlist });
+  await logAddToWatchlist(film.tmdbId, film.類型);
 }
 
 export async function removeFromWatchlist(tmdbId: number): Promise<void> {
@@ -99,7 +102,7 @@ export async function updateMovieWatchDate(tmdbId: number, date: string | null) 
 
   const ref = doc(db, 'users', 使用者.uid);
   await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}.已看紀錄.movie`]: date,
+    [`追蹤清單.${tmdbId}.已看紀錄.movie`]: date ? Timestamp.now() : null,
   });
 }
 
@@ -113,6 +116,6 @@ export async function updateEpisodeWatchDate(
 
   const ref = doc(db, 'users', 使用者.uid);
   await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: date,
+    [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: date ? Timestamp.now() : null,
   });
 }
