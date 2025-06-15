@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="zh-Hant">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-900 text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-zinc-900 text-white antialiased`}
       >
         <UserProvider>
           <DetailPortalProvider>
@@ -49,7 +49,7 @@ function AppContent({ children }: { children: ReactNode }) {
 
   if (!使用者) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white p-4">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-900 p-4 text-white">
         <LoginPage />
       </div>
     );

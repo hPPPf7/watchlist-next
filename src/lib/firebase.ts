@@ -1,7 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import {
-  getFirestore,
   initializeFirestore,
   getDoc,
   type DocumentReference,

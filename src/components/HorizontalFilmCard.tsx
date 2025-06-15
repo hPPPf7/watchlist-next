@@ -13,7 +13,7 @@ interface Props {
 export function HorizontalFilmCard({ film, onClick, children, className }: Props) {
   return (
     <div
-      className={`flex items-center gap-4 rounded-2xl bg-zinc-800 hover:bg-zinc-700 p-4 transition cursor-pointer ${
+      className={`flex cursor-pointer items-center gap-4 rounded-2xl bg-zinc-800 p-4 transition hover:bg-zinc-700 ${
         className || ''
       }`}
       onClick={onClick}
@@ -21,10 +21,10 @@ export function HorizontalFilmCard({ film, onClick, children, className }: Props
       <CardImageWithFallback
         src={film.封面圖}
         alt="封面"
-        className="w-20 h-32 object-cover rounded-lg flex-shrink-0"
+        className="h-32 w-20 shrink-0 rounded-lg object-cover"
       />
-      <div className="flex-1 min-w-0">
-        <h2 className="text-base font-semibold truncate">{film.title}</h2>
+      <div className="min-w-0 flex-1">
+        <h2 className="truncate text-base font-semibold">{film.title}</h2>
         {children}
       </div>
     </div>

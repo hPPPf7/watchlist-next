@@ -10,13 +10,13 @@ interface Props {
 
 export function SearchResultList({ 結果列表, onClickFilm }: Props) {
   if (結果列表.length === 0) {
-    return <div className="text-center text-gray-400 mt-6">目前沒有找到資料</div>;
+    return <div className="mt-6 text-center text-gray-400">目前沒有找到資料</div>;
   }
 
   return (
     <div className="w-full px-2 sm:px-4">
       <div
-        className="grid gap-4 mt-6"
+        className="mt-6 grid gap-4"
         style={{
           gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 140px))',
           justifyContent: 'center',

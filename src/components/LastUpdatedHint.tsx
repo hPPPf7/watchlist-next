@@ -44,7 +44,7 @@ export function LastUpdatedHint({ lastUpdated }: LastUpdatedHintProps) {
   }
 
   return (
-    <div className="text-center text-sm text-zinc-400 mt-6 mb-6 pb-4">
+    <div className="my-6 pb-4 text-center text-sm text-zinc-400">
       （上次更新：{displayText}）
     </div>
   );

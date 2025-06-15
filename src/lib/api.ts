@@ -1,6 +1,5 @@
 // src/lib/api.ts
 
-import { fetchWithErrorHandling } from './utils';
 import type { Film } from '@/types/Film';
 
 // --- 共用設定 ---

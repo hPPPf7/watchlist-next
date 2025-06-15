@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { getTMDbDetail, tmdbFetch } from '@/lib/api';
+import { getTMDbDetail } from '@/lib/api';
 import { Film } from '@/types/Film';
 import { DetailDialog } from '@/components/DetailDialog';
 import { useUser } from '@/hooks/useUser';
@@ -68,7 +67,7 @@ export default function MediaPage({ params }: { params: { tmdbId: string } }) {
   if (!film) return null;
 
   return (
-    <div className="px-4 py-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl px-4 py-6">
       <DetailDialog
         film={film}
         open={true}

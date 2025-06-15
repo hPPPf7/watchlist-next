@@ -33,7 +33,7 @@ export function FilmCard({
         className,
       )}
     >
-      <CardHeader className="p-0 overflow-hidden relative">
+      <CardHeader className="relative overflow-hidden p-0">
         <div
           className={cn(
             'relative w-full bg-zinc-800',
@@ -47,16 +47,16 @@ export function FilmCard({
           <ImageWithFallback
             src={封面圖}
             alt={title}
-            className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105 ease-in-out"
+            className="absolute inset-0 size-full object-cover object-center transition-transform duration-300 ease-in-out hover:scale-105"
           />
         </div>
       </CardHeader>
 
-      <CardContent className="p-2 flex flex-col">
-        <h3 className="text-sm font-semibold leading-tight line-clamp-2 text-white min-h-[3rem]">
+      <CardContent className="flex flex-col p-2">
+        <h3 className="line-clamp-2 min-h-12 text-sm font-semibold leading-tight text-white">
           {title}
         </h3>
-        <p className="text-xs text-zinc-400 mt-1">
+        <p className="mt-1 text-xs text-zinc-400">
           {類型 === 'movie' ? '電影' : '影集'}｜{year || '年份未知'}
         </p>
       </CardContent>

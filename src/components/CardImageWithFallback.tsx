@@ -26,7 +26,7 @@ export function CardImageWithFallback({
         setImgSrc(fallbackSrc);
         setLoaded(true);
       }}
-      className={`object-cover rounded-lg transition-opacity duration-300 ${
+      className={`rounded-lg object-cover transition-opacity duration-300 ${
         loaded ? 'opacity-100' : 'opacity-0'
       } ${className || ''}`}
     />

@@ -1,23 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
 import { useUser } from '@/hooks/useUser';
-import { db } from '@/lib/firebase';
 import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { LastUpdatedHint } from '@/components/LastUpdatedHint';
 import { fetch電影推薦清單, fetch影集推薦清單, searchTMDb, getTMDbDetail } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
+
 import { Film } from '@/types/Film';
-import { useDetail } from '@/components/DetailPortal';
 import { SearchInputSection } from './components/SearchInputSection';
 import { SearchResultList } from './components/SearchResultList';
 import { RecommendList } from './components/RecommendList';
@@ -240,7 +232,7 @@ export default function SearchPage() {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col">
+      <div className="flex min-h-screen flex-col">
         {/* 🔍 搜尋列 */}
         <SearchInputSection
           關鍵字={關鍵字}
@@ -253,11 +245,11 @@ export default function SearchPage() {
 
         {/* 🔖 分類 Tabs */}
         {!關鍵字.trim() && (
-          <div className="px-4 mb-6">
+          <div className="mb-6 px-4">
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => 設定當前Tab('movie')}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition ${
+                className={`rounded-full px-6 py-2 text-sm font-medium transition ${
                   當前Tab === 'movie'
                     ? 'bg-purple-600 text-white'
                     : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
@@ -267,7 +259,7 @@ export default function SearchPage() {
               </button>
               <button
                 onClick={() => 設定當前Tab('tv')}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition ${
+                className={`rounded-full px-6 py-2 text-sm font-medium transition ${
                   當前Tab === 'tv'
                     ? 'bg-purple-600 text-white'
                     : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
@@ -307,7 +299,7 @@ export default function SearchPage() {
               {關鍵字.trim() ? (
                 <SearchResultList 結果列表={結果列表} onClickFilm={handleOpenDetail} />
               ) : (
-                <div className="px-4 space-y-10">
+                <div className="space-y-10 px-4">
                   {loading && <EmptyState text="正在刷新推薦清單..." loading small />}
 
                   <RecommendList

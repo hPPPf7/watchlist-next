@@ -17,11 +17,11 @@ export function ImageWithFallback({
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div className="absolute inset-0 size-full">
       {/* Loading 動畫 */}
       {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/50 z-10">
-          <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-900/50">
+          <div className="size-6 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
         </div>
       )}
 
@@ -35,7 +35,7 @@ export function ImageWithFallback({
           setImgSrc(fallbackSrc);
           setLoaded(true);
         }}
-        className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 ${
+        className={`absolute inset-0 size-full object-cover object-center transition-opacity duration-300 ${
           loaded ? 'opacity-100' : 'opacity-0'
         } ${className || ''}`}
       />

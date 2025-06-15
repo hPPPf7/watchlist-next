@@ -29,12 +29,12 @@ export function SearchInputSection({
   搜尋中,
 }: Props) {
   return (
-    <div className="sticky top-16 z-20 backdrop-blur-md bg-zinc-900/80 border-b border-zinc-700 mb-6">
-      <div className="px-4 sm:px-6 py-3 relative">
+    <div className="sticky top-16 z-20 mb-6 border-b border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
+      <div className="relative px-4 py-3 sm:px-6">
         <div className="grid grid-cols-[1fr_auto_auto] gap-2">
           <Input
             name="search"
-            className="h-10 bg-zinc-800 border-zinc-700 text-white pl-4"
+            className="h-10 border-zinc-700 bg-zinc-800 pl-4 text-white"
             placeholder="輸入名稱"
             value={關鍵字}
             onChange={(e) => 設定關鍵字(e.target.value)}

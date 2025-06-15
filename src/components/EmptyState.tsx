@@ -16,7 +16,7 @@ export function EmptyState({ text, loading, small }: EmptyStateProps) {
         small ? 'h-20 text-sm' : 'h-40 text-base',
       )}
     >
-      {loading && <Loader2 className="w-6 h-6 mb-2 animate-spin" />}
+      {loading && <Loader2 className="mb-2 size-6 animate-spin" />}
       {text}
     </div>
   );

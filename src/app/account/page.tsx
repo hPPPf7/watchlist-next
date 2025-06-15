@@ -32,8 +32,8 @@ export default function AccountPage() {
   };
 
   return (
-    <div className="flex items-center justify-center p-4 min-h-[calc(100vh-4rem)] sm:p-8">
-      <Card className="w-full max-w-md bg-zinc-900 text-white border border-zinc-700 shadow-xl rounded-2xl overflow-hidden">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 sm:p-8">
+      <Card className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 text-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-center text-3xl font-bold text-white">🎬 追劇小助手</CardTitle>
         </CardHeader>
@@ -44,7 +44,7 @@ export default function AccountPage() {
               <Button
                 onClick={登入}
                 disabled={loading}
-                className="w-full bg-zinc-700 text-white border border-zinc-600 hover:bg-blue-600 hover:border-blue-600 transition duration-200 rounded-lg py-2 group"
+                className="group w-full rounded-lg border border-zinc-600 bg-zinc-700 py-2 text-white transition duration-200 hover:border-blue-600 hover:bg-blue-600"
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
@@ -52,17 +52,17 @@ export default function AccountPage() {
                     登入中...
                   </div>
                 ) : (
-                  <span className="group-hover:scale-[1.01] transition-transform">
+                  <span className="transition-transform group-hover:scale-[1.01]">
                     🚀 使用 Google 登入
                   </span>
                 )}
               </Button>
             </>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3 min-w-0">
+            <div className="flex flex-col flex-wrap items-center gap-4 sm:flex-row sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
                 {使用者.photoURL && (
-                  <div className="relative w-12 h-12 shrink-0">
+                  <div className="relative size-12 shrink-0">
                     <ImageWithFallback
                       src={使用者.photoURL}
                       alt="頭像"
@@ -70,14 +70,14 @@ export default function AccountPage() {
                     />
                   </div>
                 )}
-                <div className="text-left truncate">
-                  <p className="font-semibold truncate">{使用者.displayName || '使用者'}</p>
-                  <p className="text-sm text-zinc-400 truncate">{使用者.email}</p>
+                <div className="truncate text-left">
+                  <p className="truncate font-semibold">{使用者.displayName || '使用者'}</p>
+                  <p className="truncate text-sm text-zinc-400">{使用者.email}</p>
                 </div>
               </div>
               <Button
                 onClick={登出}
-                className="bg-zinc-700 text-white border border-zinc-600 hover:bg-red-600 hover:border-red-600 transition duration-200 rounded-lg py-2 px-6 w-full sm:w-auto"
+                className="w-full rounded-lg border border-zinc-600 bg-zinc-700 px-6 py-2 text-white transition duration-200 hover:border-red-600 hover:bg-red-600 sm:w-auto"
               >
                 登出
               </Button>

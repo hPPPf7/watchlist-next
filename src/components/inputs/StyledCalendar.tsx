@@ -11,7 +11,7 @@ interface StyledCalendarProps {
 
 export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
   return (
-    <div className="rounded-xl border border-zinc-700 bg-zinc-800 p-4 shadow w-full mx-auto">
+    <div className="mx-auto w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 shadow">
       <DayPicker
         mode="single"
         selected={selected}

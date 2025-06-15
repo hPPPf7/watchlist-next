@@ -1,5 +1,5 @@
-# dependencies
-/node_modules/
+# ➤ 依賴相關
+node_modules/
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -7,39 +7,34 @@
 !.yarn/releases
 !.yarn/versions
 
-# next.js build output
-/.next/
+# ➤ Next.js / Vercel 產出
+.next/
+dist/
 out/
 build/
-
-# production
-/.vercel/
 .vercel/
-dist/
 
-# env files
+# ➤ 編譯與測試
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# ➤ 環境變數
 .env
 .env.*
 !.env.example
 
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# logs
+# ➤ 鎖檔與除錯
+*.lock
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-# misc
-.DS_Store
-*.pem
 *.log
 
-# vscode settings (optional,你可以留或忽略)
-.vscode/
+# ➤ 系統雜項
+.DS_Store
+*.pem
 
-# coverage reports
-/coverage/
+# ➤ 本機設定（依需求）
+.vscode/

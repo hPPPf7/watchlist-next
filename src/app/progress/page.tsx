@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@/hooks/useUser';
-import { CardImageWithFallback } from '@/components/CardImageWithFallback';
 import { type Film } from '@/types/Film';
 import { useOpenDetail } from '@/hooks/useOpenDetail';
 import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
@@ -69,8 +68,8 @@ export default function SeriesProgressPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-8 text-white">🎯 觀看進度畫面</h1>
+    <div className="mx-auto max-w-4xl p-4">
+      <h1 className="mb-8 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
 
       {載入中 ? (
         <EmptyState text="載入中..." loading />
@@ -85,7 +84,7 @@ export default function SeriesProgressPage() {
               onClick={() => handleOpenDetail(item)}
               className="mb-6"
             >
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="mt-1 text-xs text-gray-400">
                 已看集數：{Object.keys(item.已看紀錄?.episodes ?? {}).length}
               </p>
             </HorizontalFilmCard>
@@ -97,7 +96,7 @@ export default function SeriesProgressPage() {
               <div className="mt-4 space-y-4">
                 {尚未看過.map(({ id, item }) => (
                   <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
-                    <p className="text-xs text-gray-400 mt-1">尚未觀看任何集數</p>
+                    <p className="mt-1 text-xs text-gray-400">尚未觀看任何集數</p>
                   </HorizontalFilmCard>
                 ))}
               </div>

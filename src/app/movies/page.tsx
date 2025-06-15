@@ -94,20 +94,20 @@ export default function MovieTrackerPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">🎬 想看電影清單</h1>
+    <div className="mx-auto max-w-4xl p-4">
+      <h1 className="mb-4 text-2xl font-bold">🎬 想看電影清單</h1>
 
       <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
-        <TabsList className="mb-6 bg-zinc-800 border border-zinc-700 inline-flex overflow-hidden rounded-xl">
+        <TabsList className="mb-6 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
           <TabsTrigger
             value="countdown"
-            className="w-[120px] h-10 data-[state=active]:bg-zinc-700 text-sm text-zinc-400 data-[state=active]:text-white"
+            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
           >
             ⏳ <span className="ml-1">即將上映</span>
           </TabsTrigger>
           <TabsTrigger
             value="watchlist"
-            className="w-[120px] h-10 data-[state=active]:bg-zinc-700 text-sm text-zinc-400 data-[state=active]:text-white"
+            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
           >
             📌 <span className="ml-1">電影清單</span>
           </TabsTrigger>
@@ -124,9 +124,9 @@ export default function MovieTrackerPage() {
                 <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
                   <p className="text-sm text-gray-500">上映日：{formatDate(item.上映日 || '')}</p>
                   {formatCountdown(item.上映日 || '') === '0 天後' ? (
-                    <p className="text-green-400 font-bold text-base mt-1">🎉 今天上映</p>
+                    <p className="mt-1 text-base font-bold text-green-400">🎉 今天上映</p>
                   ) : (
-                    <p className="text-red-400 font-bold text-base mt-1">
+                    <p className="mt-1 text-base font-bold text-red-400">
                       {formatCountdown(item.上映日 || '')}
                     </p>
                   )}

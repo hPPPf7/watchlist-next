@@ -10,12 +10,9 @@ import { getTMDbDetail, tmdbFetch } from '@/lib/api';
 import { Film } from '@/types/Film';
 import { useUser } from '@/hooks/useUser';
 import { DialogDescription } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { updateMovieWatchDate, updateEpisodeWatchDate } from '@/lib/watchlist';
 import { toast } from 'sonner';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StyledCalendar } from '@/components/inputs/StyledCalendar';
 
@@ -170,8 +167,8 @@ export function DetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onOpenChange(false)}>
-      <DialogOverlay className="bg-black/50 backdrop-blur-sm fixed inset-0" />
-      <DialogContent className="hide-close-button fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-full sm:max-w-5xl overflow-hidden">
+      <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+      <DialogContent className="hide-close-button fixed left-1/2 top-1/2 z-50 w-full max-w-full -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:max-w-5xl">
         {' '}
         <DialogTitle asChild>
           <VisuallyHidden>
@@ -182,9 +179,9 @@ export function DetailDialog({
           顯示這部作品的基本資訊、劇情簡介與觀看紀錄
         </DialogDescription>
         {film && (
-          <div className="relative flex flex-col h-full">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="bg-zinc-800 p-2 flex justify-center">
+          <div className="relative flex h-full flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
+              <TabsList className="flex justify-center bg-zinc-800 p-2">
                 <TabsTrigger value="info" className="flex-1">
                   📄 詳細資料
                 </TabsTrigger>
@@ -193,31 +190,31 @@ export function DetailDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto p-6 gap-6">
+              <div className="flex-1 gap-6 overflow-y-auto p-6">
                 {loading ? (
-                  <div className="text-center text-gray-400 text-sm animate-pulse w-full">
+                  <div className="w-full animate-pulse text-center text-sm text-gray-400">
                     載入中...
                   </div>
                 ) : error ? (
-                  <div className="text-center text-red-400 text-sm w-full">{error}</div>
+                  <div className="w-full text-center text-sm text-red-400">{error}</div>
                 ) : (
                   <>
                     <TabsContent value="info">
-                      <div className="flex flex-col sm:flex-row gap-6">
-                        <div className="hidden sm:block w-60 flex-shrink-0">
-                          <div className="relative w-full aspect-[2/3] overflow-hidden rounded">
+                      <div className="flex flex-col gap-6 sm:flex-row">
+                        <div className="hidden w-60 shrink-0 sm:block">
+                          <div className="relative aspect-[2/3] w-full overflow-hidden rounded">
                             <ImageWithFallback
                               src={film.封面圖}
                               alt={film.title}
-                              className="absolute inset-0 w-full h-full object-cover"
+                              className="absolute inset-0 size-full object-cover"
                             />
                           </div>
                         </div>
-                        <div className="flex-1 flex flex-col space-y-4">
-                          <h2 className="text-2xl font-bold flex flex-wrap items-center gap-2">
+                        <div className="flex flex-1 flex-col space-y-4">
+                          <h2 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
                             {film.title}
                             {film.類型 === 'tv' && 詳細資料?.status && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-600">
+                              <span className="rounded-full border border-zinc-600 bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300">
                                 {詳細資料.status === 'Returning Series'
                                   ? '連載中'
                                   : 詳細資料.status === 'Ended'
@@ -264,7 +261,7 @@ export function DetailDialog({
                           {詳細資料?.overview && (
                             <div>
                               <h3 className="text-lg font-semibold">劇情簡介</h3>
-                              <p className="text-sm text-zinc-300 whitespace-pre-line">
+                              <p className="whitespace-pre-line text-sm text-zinc-300">
                                 {詳細資料.overview}
                               </p>
                             </div>
@@ -274,7 +271,7 @@ export function DetailDialog({
                               href={詳細資料.homepage}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-400 hover:underline text-sm"
+                              className="text-sm text-blue-400 hover:underline"
                             >
                               官方網站 🔗
                             </a>
@@ -285,7 +282,7 @@ export function DetailDialog({
 
                     <TabsContent value="episodes">
                       {film.類型 === 'movie' ? (
-                        <div className="grid gap-6 sm:grid-cols-2 items-start justify-center">
+                        <div className="grid items-start justify-center gap-6 sm:grid-cols-2">
                           {/* 左邊日曆 */}
                           <div className="justify-self-center">
                             <div className="space-y-2">
@@ -312,7 +309,7 @@ export function DetailDialog({
                               />
                             </div>
 
-                            <p className="text-sm mt-2">
+                            <p className="mt-2 text-sm">
                               {輸入錯誤 && 錯誤訊息 ? (
                                 <span className="text-red-500">❌ {錯誤訊息}</span>
                               ) : 觀看日期 === 'forgot' ? (
@@ -331,7 +328,7 @@ export function DetailDialog({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-zinc-700 hover:bg-zinc-600 border-none text-white"
+                                className="border-none bg-zinc-700 text-white hover:bg-zinc-600"
                                 onClick={() => {
                                   const today = new Date();
                                   設定觀看日期(today);
@@ -346,7 +343,7 @@ export function DetailDialog({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-zinc-700 hover:bg-zinc-600 border-none text-white"
+                                className="border-none bg-zinc-700 text-white hover:bg-zinc-600"
                                 onClick={() => {
                                   設定觀看日期('forgot');
                                   設定日期輸入('');
@@ -361,7 +358,7 @@ export function DetailDialog({
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
-                                className="bg-green-600 hover:bg-green-500 text-white"
+                                className="bg-green-600 text-white hover:bg-green-500"
                                 onClick={async () => {
                                   if (!film || film.類型 !== 'movie') return;
                                   const formatted =
@@ -402,7 +399,7 @@ export function DetailDialog({
                           <div className="flex items-center gap-2">
                             <span className="text-sm">選擇季數：</span>
                             <select
-                              className="border bg-zinc-800 rounded text-sm p-1"
+                              className="rounded border bg-zinc-800 p-1 text-sm"
                               value={選擇的季}
                               onChange={async (e) => {
                                 const 季 = parseInt(e.target.value);
@@ -417,7 +414,7 @@ export function DetailDialog({
                               ))}
                             </select>
                           </div>
-                          <div className="grid gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                          <div className="grid max-h-[50vh] gap-2 overflow-y-auto pr-1">
                             {集數資料.map((ep) => {
                               const key = `${ep.season_number}-${ep.episode_number}`;
                               const selectedDate = 集數日期[key] ?? null;
@@ -455,7 +452,7 @@ export function DetailDialog({
 
                                   {/* 展開日曆 */}
                                   {目前選擇的集數ID === ep.id && (
-                                    <div className="p-4 bg-zinc-900 border-t border-zinc-700 rounded-b">
+                                    <div className="rounded-b border-t border-zinc-700 bg-zinc-900 p-4">
                                       <StyledCalendar
                                         selected={暫存日期 ?? undefined}
                                         onSelect={async (date) => {

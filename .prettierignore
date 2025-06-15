@@ -10,3 +10,8 @@ coverage
 *.jpg
 *.jpeg
 *.svg
+
+.vscode
+.vercel
+.env
+.env.*
