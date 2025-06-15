@@ -1,0 +1,496 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogOverlay, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { getTMDbDetail, tmdbFetch } from '@/lib/api';
+import { Film } from '@/types/Film';
+import { useUser } from '@/hooks/useUser';
+import { DialogDescription } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { updateMovieWatchDate, updateEpisodeWatchDate } from '@/lib/watchlist';
+import { toast } from 'sonner';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { StyledCalendar } from '@/components/inputs/StyledCalendar';
+
+interface DetailDialogProps {
+  film: Film | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  from: 'search' | 'progress' | 'movies';
+  onToggleWatchlist?: (film: Film) => Promise<void>;
+  onUpdated?: () => void;
+  追蹤狀態?: Record<number, boolean | 'loading'>;
+}
+
+export function DetailDialog({
+  film,
+  open,
+  onOpenChange,
+  from,
+  onToggleWatchlist,
+  onUpdated,
+  追蹤狀態,
+}: DetailDialogProps) {
+  const { 使用者 } = useUser();
+  const [詳細資料, 設定詳細資料] = useState<Record<string, any> | null>(() => {
+    if (film?.詳細 && Object.keys(film.詳細).length > 0) return film.詳細;
+    return null;
+  });
+  const [loading, 設定loading] = useState(false);
+  const [error, 設定error] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('info');
+  const [季資料, 設定季資料] = useState<any[]>([]);
+  const [集數資料, 設定集數資料] = useState<any[]>([]);
+  const [選擇的季, 設定選擇的季] = useState<number>(1);
+  const [暫時追蹤狀態, 設定暫時追蹤狀態] = useState<boolean | 'loading' | null>(null);
+  const is追蹤中 =
+    暫時追蹤狀態 === 'loading'
+      ? true // 或 false，看你希望 loading 狀態時顯示哪個樣式
+      : 暫時追蹤狀態 !== null
+      ? 暫時追蹤狀態
+      : 追蹤狀態?.[film?.tmdbId ?? -1] === true;
+  const is處理中 = 暫時追蹤狀態 === 'loading' || 追蹤狀態?.[film?.tmdbId ?? -1] === 'loading';
+  const [觀看日期, 設定觀看日期] = useState<Date | 'forgot' | null>(null);
+  const [已確認, 設定已確認] = useState(false);
+  const [日期輸入, 設定日期輸入] = useState('');
+  const [輸入錯誤, 設定輸入錯誤] = useState(false);
+  const [錯誤訊息, 設定錯誤訊息] = useState('');
+  const [日曆開啟, 設定日曆開啟] = useState(false);
+  const [集數日期, 設定集數日期] = useState<Record<string, Date | null>>({});
+  const [展開中的Popover, 設定展開中的Popover] = useState<number | null>(null);
+  const [目前選擇的集數ID, 設定目前選擇的集數ID] = useState<number | null>(null);
+  const [暫存日期, 設定暫存日期] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (open && film) {
+      const 無詳細資料 = !film.詳細 || Object.keys(film.詳細).length === 0;
+
+      if (!無詳細資料) {
+        設定詳細資料(film.詳細 && Object.keys(film.詳細).length > 0 ? film.詳細 : null);
+        設定error(null);
+        設定loading(false);
+      } else {
+        (async () => {
+          try {
+            設定loading(true);
+            const 資料 = await getTMDbDetail(film.類型, film.tmdbId);
+            設定詳細資料(資料);
+          } catch (err: any) {
+            console.error('取得詳細資料失敗', err);
+            設定error('⚠️ 載入詳細資料失敗');
+          } finally {
+            設定loading(false);
+          }
+        })();
+      }
+    }
+  }, [open, film]);
+
+  useEffect(() => {
+    if (open && film?.類型 === 'tv') {
+      (async () => {
+        try {
+          const 資料 = await getTMDbDetail('tv', film.tmdbId);
+          設定季資料(資料.seasons || []);
+          const firstSeason =
+            資料.seasons?.find((s: any) => s.season_number === 1) || 資料.seasons?.[0];
+          if (firstSeason) {
+            設定選擇的季(firstSeason.season_number);
+            await 載入集數(film.tmdbId, firstSeason.season_number);
+          }
+        } catch (err) {
+          console.error('載入季資料失敗', err);
+        }
+      })();
+    }
+  }, [open, film]);
+
+  async function 載入集數(tvId: number, seasonNumber: number) {
+    try {
+      const data = await tmdbFetch<{ episodes: any[] }>(`/tv/${tvId}/season/${seasonNumber}`);
+      設定集數資料(data.episodes || []);
+    } catch (err) {
+      console.error('載入集數資料失敗', err);
+    }
+  }
+
+  useEffect(() => {
+    if (open && film?.類型 === 'movie') {
+      const 記錄日期 = film.詳細?.watchRecord?.movie;
+      if (typeof 記錄日期 === 'string') {
+        設定觀看日期(new Date(記錄日期));
+        設定已確認(true);
+      } else {
+        設定觀看日期(null);
+        設定已確認(false);
+      }
+    }
+  }, [open, film]);
+
+  useEffect(() => {
+    if (open && film) {
+      if (film.類型 === 'tv' && from === 'progress') {
+        setActiveTab('episodes');
+      } else {
+        setActiveTab('info');
+      }
+    }
+  }, [open, film, from]);
+
+  useEffect(() => {
+    if (open && film?.類型 === 'tv') {
+      const record = film.詳細?.watchRecord?.episodes ?? {};
+      const parsed: Record<string, Date | null> = {};
+
+      for (const key in record) {
+        const dateStr = record[key];
+        if (dateStr) parsed[key] = new Date(dateStr);
+      }
+
+      設定集數日期(parsed);
+    }
+  }, [open, film]);
+
+  useEffect(() => {
+    if (!open) {
+      設定觀看日期(null);
+      設定已確認(false);
+      設定日期輸入('');
+      設定輸入錯誤(false);
+      設定錯誤訊息('');
+    }
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onOpenChange(false)}>
+      <DialogOverlay className="bg-black/50 backdrop-blur-sm fixed inset-0" />
+      <DialogContent className="hide-close-button fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-full sm:max-w-5xl overflow-hidden">
+        {' '}
+        <DialogTitle asChild>
+          <VisuallyHidden>
+            <h2>詳細資料</h2>
+          </VisuallyHidden>
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          顯示這部作品的基本資訊、劇情簡介與觀看紀錄
+        </DialogDescription>
+        {film && (
+          <div className="relative flex flex-col h-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+              <TabsList className="bg-zinc-800 p-2 flex justify-center">
+                <TabsTrigger value="info" className="flex-1">
+                  📄 詳細資料
+                </TabsTrigger>
+                <TabsTrigger value="episodes" className="flex-1">
+                  📖 觀看紀錄
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="flex-1 overflow-y-auto p-6 gap-6">
+                {loading ? (
+                  <div className="text-center text-gray-400 text-sm animate-pulse w-full">
+                    載入中...
+                  </div>
+                ) : error ? (
+                  <div className="text-center text-red-400 text-sm w-full">{error}</div>
+                ) : (
+                  <>
+                    <TabsContent value="info">
+                      <div className="flex flex-col sm:flex-row gap-6">
+                        <div className="hidden sm:block w-60 flex-shrink-0">
+                          <div className="relative w-full aspect-[2/3] overflow-hidden rounded">
+                            <ImageWithFallback
+                              src={film.封面圖}
+                              alt={film.title}
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 flex flex-col space-y-4">
+                          <h2 className="text-2xl font-bold flex flex-wrap items-center gap-2">
+                            {film.title}
+                            {film.類型 === 'tv' && 詳細資料?.status && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-600">
+                                {詳細資料.status === 'Returning Series'
+                                  ? '連載中'
+                                  : 詳細資料.status === 'Ended'
+                                  ? '已完結'
+                                  : '狀態不明'}
+                              </span>
+                            )}
+                          </h2>
+
+                          {/* 類型＋年份 */}
+                          <div className="text-sm text-zinc-400">
+                            {film.類型 === 'tv'
+                              ? (() => {
+                                  const startYear = 詳細資料?.first_air_date?.slice(0, 4);
+                                  const endYear = 詳細資料?.last_air_date?.slice(0, 4);
+                                  return startYear && endYear
+                                    ? startYear === endYear
+                                      ? `影集｜${startYear}`
+                                      : `影集｜${startYear} ~ ${endYear}`
+                                    : '影集｜?';
+                                })()
+                              : 詳細資料?.release_date
+                              ? `電影｜${詳細資料.release_date.slice(0, 4)}`
+                              : '電影｜?'}
+                          </div>
+
+                          {/* 時長＋國家＋語言 */}
+                          <div className="flex flex-wrap gap-2 text-sm text-zinc-400">
+                            {(詳細資料?.runtime ?? 詳細資料?.episode_run_time?.[0]) && (
+                              <span>
+                                ⏳ {詳細資料?.runtime ?? 詳細資料?.episode_run_time?.[0]} 分鐘
+                              </span>
+                            )}
+                            {詳細資料?.production_countries?.length > 0 && (
+                              <span>
+                                🌍{' '}
+                                {詳細資料?.production_countries.map((c: any) => c.name).join('、')}
+                              </span>
+                            )}
+                            {詳細資料?.original_language && (
+                              <span>🗣️ {詳細資料.original_language.toUpperCase()}</span>
+                            )}
+                          </div>
+                          {詳細資料?.overview && (
+                            <div>
+                              <h3 className="text-lg font-semibold">劇情簡介</h3>
+                              <p className="text-sm text-zinc-300 whitespace-pre-line">
+                                {詳細資料.overview}
+                              </p>
+                            </div>
+                          )}
+                          {詳細資料?.homepage && (
+                            <a
+                              href={詳細資料.homepage}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:underline text-sm"
+                            >
+                              官方網站 🔗
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="episodes">
+                      {film.類型 === 'movie' ? (
+                        <div className="grid gap-6 sm:grid-cols-2 items-start justify-center">
+                          {/* 左邊日曆 */}
+                          <div className="justify-self-center">
+                            <div className="space-y-2">
+                              <label className="text-sm text-zinc-400">觀看日期</label>
+                              <StyledCalendar
+                                selected={觀看日期 instanceof Date ? 觀看日期 : undefined}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    if (date <= today) {
+                                      設定觀看日期(date);
+                                      設定已確認(false);
+                                      設定日期輸入(format(date, 'yyyy/MM/dd'));
+                                      設定輸入錯誤(false);
+                                      設定錯誤訊息('');
+                                    } else {
+                                      toast.error('❌ 日期不能晚於今天');
+                                      設定輸入錯誤(true);
+                                      設定錯誤訊息('日期不得晚於今天');
+                                    }
+                                  }
+                                }}
+                              />
+                            </div>
+
+                            <p className="text-sm mt-2">
+                              {輸入錯誤 && 錯誤訊息 ? (
+                                <span className="text-red-500">❌ {錯誤訊息}</span>
+                              ) : 觀看日期 === 'forgot' ? (
+                                <span className="text-zinc-400">已選擇日期：忘記日期</span>
+                              ) : 觀看日期 instanceof Date ? (
+                                <span className="text-zinc-400">
+                                  已選擇日期：{format(觀看日期, 'yyyy-MM-dd')}
+                                </span>
+                              ) : null}
+                            </p>
+                          </div>
+
+                          {/* 右邊按鈕 */}
+                          <div className="space-y-4">
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="bg-zinc-700 hover:bg-zinc-600 border-none text-white"
+                                onClick={() => {
+                                  const today = new Date();
+                                  設定觀看日期(today);
+                                  設定已確認(false);
+                                  設定日期輸入(format(today, 'yyyy/MM/dd'));
+                                  設定輸入錯誤(false);
+                                }}
+                              >
+                                📅 今天
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="bg-zinc-700 hover:bg-zinc-600 border-none text-white"
+                                onClick={() => {
+                                  設定觀看日期('forgot');
+                                  設定日期輸入('');
+                                  設定輸入錯誤(false);
+                                  設定已確認(false);
+                                }}
+                              >
+                                ❓ 忘記日期
+                              </Button>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-500 text-white"
+                                onClick={async () => {
+                                  if (!film || film.類型 !== 'movie') return;
+                                  const formatted =
+                                    觀看日期 === 'forgot'
+                                      ? 'forgot'
+                                      : 觀看日期 instanceof Date
+                                      ? format(觀看日期, 'yyyy-MM-dd')
+                                      : null;
+                                  await updateMovieWatchDate(film.tmdbId, formatted);
+                                  設定已確認(true);
+                                  toast.success('✅ 已儲存觀看紀錄');
+                                }}
+                              >
+                                ✅ 確認紀錄
+                              </Button>
+
+                              {已確認 && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="text-white"
+                                  onClick={async () => {
+                                    if (!film || film.類型 !== 'movie') return;
+                                    await updateMovieWatchDate(film.tmdbId, null);
+                                    設定觀看日期(null);
+                                    設定已確認(false);
+                                    toast.success('🗑️ 已取消觀看紀錄');
+                                  }}
+                                >
+                                  🗑️ 取消紀錄
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">選擇季數：</span>
+                            <select
+                              className="border bg-zinc-800 rounded text-sm p-1"
+                              value={選擇的季}
+                              onChange={async (e) => {
+                                const 季 = parseInt(e.target.value);
+                                設定選擇的季(季);
+                                await 載入集數(film.tmdbId, 季);
+                              }}
+                            >
+                              {季資料.map((s) => (
+                                <option key={s.id} value={s.season_number}>
+                                  第 {s.season_number} 季（{s.episode_count} 集）
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="grid gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                            {集數資料.map((ep) => {
+                              const key = `${ep.season_number}-${ep.episode_number}`;
+                              const selectedDate = 集數日期[key] ?? null;
+
+                              return (
+                                <div key={ep.id} className="w-full">
+                                  {/* 上層列 */}
+                                  <div
+                                    className={cn(
+                                      'flex justify-between items-center p-2 rounded',
+                                      selectedDate ? 'bg-zinc-700' : 'bg-zinc-800',
+                                    )}
+                                  >
+                                    <div className="text-sm">
+                                      {`S${ep.season_number}E${ep.episode_number}`} -{' '}
+                                      {ep.name || '未命名集數'}
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-zinc-300"
+                                      onClick={() => {
+                                        設定目前選擇的集數ID((prev) =>
+                                          prev === ep.id ? null : ep.id,
+                                        );
+                                        設定暫存日期(selectedDate);
+                                      }}
+                                    >
+                                      📅{' '}
+                                      {selectedDate
+                                        ? format(selectedDate, 'yyyy/MM/dd')
+                                        : '新增日期'}
+                                    </Button>
+                                  </div>
+
+                                  {/* 展開日曆 */}
+                                  {目前選擇的集數ID === ep.id && (
+                                    <div className="p-4 bg-zinc-900 border-t border-zinc-700 rounded-b">
+                                      <StyledCalendar
+                                        selected={暫存日期 ?? undefined}
+                                        onSelect={async (date) => {
+                                          if (date) {
+                                            const key = `${ep.season_number}-${ep.episode_number}`;
+                                            await updateEpisodeWatchDate(
+                                              film.tmdbId,
+                                              key,
+                                              format(date, 'yyyy-MM-dd'),
+                                            );
+                                            設定集數日期((prev) => ({ ...prev, [key]: date }));
+                                            設定目前選擇的集數ID(null);
+                                            await onUpdated?.();
+                                            toast.success(
+                                              `✅ 已儲存：${format(date, 'yyyy/MM/dd')}`,
+                                            );
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </TabsContent>
+                  </>
+                )}
+              </div>
+            </Tabs>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
