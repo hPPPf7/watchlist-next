@@ -15,6 +15,7 @@ import { updateMovieWatchDate, updateEpisodeWatchDate } from '@/lib/watchlist';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StyledCalendar } from '@/components/inputs/StyledCalendar';
+import { logWatchedRecord } from '@/lib/popular';
 
 interface DetailDialogProps {
   film: Film | null;
@@ -392,6 +393,7 @@ export function DetailDialog({
                                         ? format(觀看日期, 'yyyy-MM-dd')
                                         : null;
                                   await updateMovieWatchDate(film.tmdbId, formatted);
+                                  await logWatchedRecord(film.tmdbId, 'movie');
                                   設定已確認(true);
                                   toast.success('✅ 已儲存觀看紀錄');
                                 }}
@@ -487,6 +489,7 @@ export function DetailDialog({
                                               key,
                                               format(date, 'yyyy-MM-dd'),
                                             );
+                                            await logWatchedRecord(film.tmdbId, 'tv');
                                             設定集數日期((prev) => ({ ...prev, [key]: date }));
                                             設定目前選擇的集數ID(null);
                                             await onUpdated?.();

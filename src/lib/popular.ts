@@ -48,6 +48,52 @@ export async function logAddToWatchlist(tmdbId: number, type: 'movie' | 'tv') {
   }
 }
 
+export async function logWatchedRecord(tmdbId: number, type: 'movie' | 'tv') {
+  const ref = doc(db, 'popularWatchedLogs', String(tmdbId));
+  const today = getTodayKey();
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      countsByDay: { [today]: 1 },
+      type,
+    });
+  } else {
+    const data = snap.data();
+    const current = data.countsByDay?.[today] || 0;
+    await updateDoc(ref, {
+      [`countsByDay.${today}`]: current + 1,
+      type,
+    });
+  }
+}
+
+export async function getPopularWatchedThisWeek(type: 'movie' | 'tv', limit = 10) {
+  const cutoffStr = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const snapshot = await getDocs(collection(db, 'popularWatchedLogs'));
+
+  const result: { tmdbId: string; count: number }[] = [];
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    if (data.type !== type) return;
+
+    const countsByDay = data.countsByDay || {};
+    let count = 0;
+
+    for (const [day, value] of Object.entries(countsByDay)) {
+      if (day >= cutoffStr) {
+        count += value as number;
+      }
+    }
+
+    if (count > 0) {
+      result.push({ tmdbId: docSnap.id, count });
+    }
+  });
+
+  return result.sort((a, b) => b.count - a.count).slice(0, limit);
+}
+
 // 加上參數 type: 'movie' | 'tv'
 export async function getPopularThisWeek(type: 'movie' | 'tv', limit = 10) {
   const cutoffStr = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
