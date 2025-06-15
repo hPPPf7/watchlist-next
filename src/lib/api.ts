@@ -4,8 +4,8 @@ import { fetchWithErrorHandling } from './utils';
 import type { Film } from '@/types/Film';
 
 // --- 共用設定 ---
-const API_KEY = '1f39a180d3e8601ac41af92d19060659';
-const BASE_URL = 'https://api.themoviedb.org/3';
+const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || '';
+const BASE_URL = process.env.NEXT_PUBLIC_TMDB_API_BASE_URL || '';
 
 // --- 共用 fetch function ---
 export async function tmdbFetch<T = any>(path: string): Promise<T> {
