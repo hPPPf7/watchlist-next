@@ -9,6 +9,7 @@ export async function tmdbFetch<T = any>(path: string): Promise<T> {
   const url = new URL(BASE_URL + path);
   url.searchParams.set('api_key', API_KEY);
   url.searchParams.set('language', 'zh-TW');
+  url.searchParams.set('region', 'TW');
 
   const response = await fetch(url.toString());
 
