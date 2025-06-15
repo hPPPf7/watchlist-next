@@ -17,11 +17,13 @@ export default function AccountPage() {
   const 登入 = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    const timeout = setTimeout(() => setLoading(false), 10000); // ⬅️ timeout 在 try 外先定義
+
     try {
-      const timeout = setTimeout(() => setLoading(false), 10000);
       await signInWithPopup(auth, provider);
-      clearTimeout(timeout);
+      clearTimeout(timeout); // ⬅️ 登入成功清掉 timeout
     } catch (e) {
+      clearTimeout(timeout); // ⬅️ 登入失敗也清掉 timeout
       console.error('登入失敗', e);
       setLoading(false);
     }
