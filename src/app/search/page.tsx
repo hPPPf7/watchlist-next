@@ -5,9 +5,9 @@ import { useUser } from '@/hooks/useUser';
 import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { LastUpdatedHint } from '@/components/LastUpdatedHint';
-import { fetch電影推薦清單, fetch影集推薦清單, searchTMDb, getTMDbDetail } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { fetch推薦清單, searchTMDb, getTMDbDetail } from '@/lib/api';
 
+import { cn } from '@/lib/utils';
 
 import { Film } from '@/types/Film';
 import { SearchInputSection } from './components/SearchInputSection';
@@ -179,7 +179,10 @@ export default function SearchPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [movieList, tvList] = await Promise.all([fetch電影推薦清單(), fetch影集推薦清單()]);
+        const [movieList, tvList] = await Promise.all([
+          fetch推薦清單('movie'),
+          fetch推薦清單('tv'),
+        ]);
         設定熱門電影_popular(movieList.popular);
         設定熱門電影_nowPlaying(movieList.nowPlaying);
         設定熱門電影_topRated(movieList.topRated);
@@ -197,7 +200,7 @@ export default function SearchPage() {
 
   const 重新整理推薦清單 = useCallback(async () => {
     try {
-      const [movieList, tvList] = await Promise.all([fetch電影推薦清單(), fetch影集推薦清單()]);
+      const [movieList, tvList] = await Promise.all([fetch推薦清單('movie'), fetch推薦清單('tv')]);
       設定熱門電影_popular(movieList.popular);
       設定熱門電影_nowPlaying(movieList.nowPlaying);
       設定熱門電影_topRated(movieList.topRated);
