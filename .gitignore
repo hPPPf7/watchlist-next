@@ -19,7 +19,9 @@ dist/
 
 # env files
 .env
-.env.* 
+.env.*
+!.env.example
+
 
 # typescript
 *.tsbuildinfo
