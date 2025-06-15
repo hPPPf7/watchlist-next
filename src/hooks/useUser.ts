@@ -1,31 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut,
-  GoogleAuthProvider,
-  User as FirebaseUser,
-} from 'firebase/auth';
-import { initializeApp, getApps } from 'firebase/app';
+import { onAuthStateChanged, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
+import { auth, provider } from '@/lib/firebase'; // ✅ 改用已初始化的 auth 與 provider
 
-// Firebase 初始化
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
-// 定義 UserContext 的型別
+// --- 型別定義 ---
 type 使用者資訊 = FirebaseUser | null;
 
 interface 使用者Context型別 {
@@ -35,10 +14,10 @@ interface 使用者Context型別 {
   isLoading: boolean;
 }
 
-// 建立 UserContext
+// --- 建立 context ---
 const UserContext = createContext<使用者Context型別 | undefined>(undefined);
 
-// ✅ UserProvider
+// --- Provider 元件 ---
 interface UserProviderProps {
   children: ReactNode;
 }
@@ -78,7 +57,7 @@ export function UserProvider({ children }: UserProviderProps) {
   );
 }
 
-// ✅ useUser
+// --- hooks ---
 export function useUser() {
   const context = useContext(UserContext);
   if (!context) {
@@ -87,7 +66,6 @@ export function useUser() {
   return context;
 }
 
-// ✅ useIsLoggedIn：簡化判斷登入狀態
 export function useIsLoggedIn() {
   const { 使用者, isLoading } = useUser();
   return !!使用者 && !isLoading;
