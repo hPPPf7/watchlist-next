@@ -13,6 +13,13 @@ export default function MediaPage({ params }: { params: { tmdbId: string } }) {
   const { 使用者 } = useUser();
   const tmdbId = Number(params.tmdbId);
 
+  useEffect(() => {
+    if (!params.tmdbId || isNaN(tmdbId) || tmdbId <= 0) {
+      console.warn('⚠️ 無效的 tmdbId，返回首頁');
+      router.push('/'); // 或你希望的錯誤頁
+    }
+  }, [params.tmdbId, tmdbId]);
+
   const [film, setFilm] = useState<Film | null>(null);
   const [追蹤狀態, 設定追蹤狀態] = useState<Record<number, boolean | 'loading'>>({});
   const [watchlistMap, setWatchlistMap] = useState<Record<string, Film>>({});
