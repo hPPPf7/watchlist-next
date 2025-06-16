@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StyledCalendar } from '@/components/inputs/StyledCalendar';
 import { logWatchedRecord } from '@/lib/popular';
+import { isValid } from 'date-fns';
 
 interface DetailDialogProps {
   film: Film | null;
@@ -161,12 +162,16 @@ export function DetailDialog({
 
   useEffect(() => {
     if (open && film?.類型 === 'tv') {
-      const record = film.詳細?.watchRecord?.episodes ?? {};
+      const record =
+        film.已看紀錄?.episodes ??
+        film.詳細?.watchRecord?.episodes ??
+        film.詳細?.已看紀錄?.episodes ??
+        {};
       const parsed: Record<string, Date | null> = {};
 
       for (const key in record) {
-        const dateStr = record[key];
-        if (dateStr) parsed[key] = new Date(dateStr);
+        const d = new Date(record[key]);
+        parsed[key] = isValid(d) ? d : null;
       }
 
       設定集數日期(parsed);
@@ -541,7 +546,7 @@ export function DetailDialog({
                                       }}
                                     >
                                       📅{' '}
-                                      {selectedDate
+                                      {selectedDate && isValid(selectedDate)
                                         ? format(selectedDate, 'yyyy/MM/dd')
                                         : '新增日期'}
                                     </Button>
