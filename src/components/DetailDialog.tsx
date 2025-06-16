@@ -66,6 +66,7 @@ export function DetailDialog({
   const [展開中的Popover, 設定展開中的Popover] = useState<number | null>(null);
   const [目前選擇的集數ID, 設定目前選擇的集數ID] = useState<number | null>(null);
   const [暫存日期, 設定暫存日期] = useState<Date | null>(null);
+  const [編輯模式, 設定編輯模式] = useState(false);
 
   useEffect(() => {
     if (open && film) {
@@ -167,6 +168,38 @@ export function DetailDialog({
       }
 
       設定集數日期(parsed);
+    }
+  }, [open, film]);
+
+  /** 當彈窗開啟且為電影時，載入既有的觀看紀錄 */
+  useEffect(() => {
+    if (!open || film?.類型 !== 'movie') return;
+
+    const raw = film.已看紀錄?.movie ?? film.詳細?.watchRecord?.movie ?? film.詳細?.已看紀錄?.movie;
+
+    let parsed: Date | 'forgot' | null = null;
+
+    if (raw === 'forgot') {
+      parsed = 'forgot';
+    } else if (typeof raw === 'string') {
+      parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw) : null;
+    } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
+      const d = raw.toDate();
+      if (!isNaN(d.getTime())) parsed = d;
+    }
+
+    if (parsed) {
+      設定觀看日期(parsed);
+      if (parsed instanceof Date) {
+        設定日期輸入(format(parsed, 'yyyy/MM/dd'));
+      } else {
+        設定日期輸入('');
+      }
+      設定已確認(true);
+    } else {
+      設定觀看日期(null);
+      設定日期輸入('');
+      設定已確認(false);
     }
   }, [open, film]);
 
@@ -330,127 +363,86 @@ export function DetailDialog({
 
                     <TabsContent value="episodes">
                       {film.類型 === 'movie' ? (
-                        <div className="grid items-start justify-center gap-6 sm:grid-cols-2">
-                          {/* 左邊日曆 */}
-                          <div className="justify-self-center">
-                            <div className="space-y-2">
-                              <label className="text-sm text-zinc-400">觀看日期</label>
-                              <StyledCalendar
-                                selected={觀看日期 instanceof Date ? 觀看日期 : undefined}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    const today = new Date();
-                                    today.setHours(0, 0, 0, 0);
-                                    if (date <= today) {
-                                      設定觀看日期(date);
-                                      設定已確認(false);
-                                      設定日期輸入(format(date, 'yyyy/MM/dd'));
-                                      設定輸入錯誤(false);
-                                      設定錯誤訊息('');
-                                    } else {
-                                      toast.error('❌ 日期不能晚於今天');
-                                      設定輸入錯誤(true);
-                                      設定錯誤訊息('日期不得晚於今天');
-                                    }
-                                  }
-                                }}
-                              />
-                            </div>
-
-                            <p className="mt-2 text-sm">
-                              {輸入錯誤 && 錯誤訊息 ? (
-                                <span className="text-red-500">❌ {錯誤訊息}</span>
-                              ) : 觀看日期 === 'forgot' ? (
-                                <span className="text-zinc-400">已選擇日期：忘記日期</span>
-                              ) : 觀看日期 instanceof Date ? (
-                                <span className="text-zinc-400">
-                                  已選擇日期：{format(觀看日期, 'yyyy-MM-dd')}
-                                </span>
-                              ) : null}
-                            </p>
-                          </div>
-
-                          {/* 右邊按鈕 */}
-                          <div className="space-y-4">
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-none bg-zinc-700 text-white hover:bg-zinc-600"
-                                onClick={() => {
-                                  const today = new Date();
-                                  設定觀看日期(today);
-                                  設定已確認(false);
-                                  設定日期輸入(format(today, 'yyyy/MM/dd'));
-                                  設定輸入錯誤(false);
-                                }}
-                              >
-                                📅 今天
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-none bg-zinc-700 text-white hover:bg-zinc-600"
-                                onClick={() => {
-                                  設定觀看日期('forgot');
-                                  設定日期輸入('');
-                                  設定輸入錯誤(false);
-                                  設定已確認(false);
-                                }}
-                              >
-                                ❓ 忘記日期
-                              </Button>
-                            </div>
-
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                className="bg-green-600 text-white hover:bg-green-500"
-                                onClick={async () => {
-                                  if (!film || film.類型 !== 'movie') return;
-                                  const formatted =
-                                    觀看日期 === 'forgot'
-                                      ? 'forgot'
-                                      : 觀看日期 instanceof Date
-                                        ? format(觀看日期, 'yyyy-MM-dd')
-                                        : null;
-                                  await updateMovieWatchDate(film.tmdbId, formatted);
-                                  await logWatchedRecord(film.tmdbId, 'movie');
-                                  if (觀看日期 instanceof Date) {
-                                    const text = format(觀看日期, 'yyyy-MM-dd');
-                                    設定已觀看日期文字(text);
-                                  } else {
-                                    設定已觀看日期文字(null);
-                                  }
-                                  設定已確認(true);
-                                  await onUpdated?.();
-                                  toast.success('✅ 已儲存觀看紀錄');
-                                }}
-                              >
-                                ✅ 確認紀錄
-                              </Button>
-
-                              {已確認 && (
+                        <div className="flex flex-col items-center gap-4">
+                          {已確認 && !編輯模式 ? (
+                            <>
+                              <h3 className="text-xl font-bold text-white">🎬 目前紀錄</h3>
+                              <p className="text-lg text-zinc-200">
+                                {觀看日期 === 'forgot'
+                                  ? '❓ 忘記日期'
+                                  : format(觀看日期 as Date, 'yyyy-MM-dd')}
+                              </p>
+                              <div className="mt-4 flex gap-3">
+                                <Button onClick={() => 設定編輯模式(true)}>✏️ 編輯紀錄</Button>
                                 <Button
-                                  size="sm"
                                   variant="destructive"
-                                  className="text-white"
                                   onClick={async () => {
-                                    if (!film || film.類型 !== 'movie') return;
+                                    if (!film) return;
                                     await updateMovieWatchDate(film.tmdbId, null);
                                     設定觀看日期(null);
                                     設定已確認(false);
                                     設定已觀看日期文字(null);
+                                    設定編輯模式(false);
                                     await onUpdated?.();
                                     toast.success('🗑️ 已取消觀看紀錄');
                                   }}
                                 >
                                   🗑️ 取消紀錄
                                 </Button>
-                              )}
-                            </div>
-                          </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="space-y-2">
+                                <StyledCalendar
+                                  selected={觀看日期 instanceof Date ? 觀看日期 : undefined}
+                                  onSelect={(date) => {
+                                    if (!date) return;
+
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+
+                                    if (date <= today) {
+                                      設定觀看日期(date);
+                                    } else {
+                                      toast.error('❌ 日期不能晚於今天');
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              <div className="flex gap-2">
+                                <Button onClick={() => 設定觀看日期(new Date())}>📅 今天</Button>
+                                <Button onClick={() => 設定觀看日期('forgot')}>❓ 忘記日期</Button>
+                              </div>
+
+                              <div className="flex gap-2">
+                                <Button
+                                  className="bg-green-600"
+                                  onClick={async () => {
+                                    if (!film) return;
+                                    const formatted =
+                                      觀看日期 === 'forgot'
+                                        ? 'forgot'
+                                        : format(觀看日期 as Date, 'yyyy-MM-dd');
+                                    await updateMovieWatchDate(film.tmdbId, formatted);
+                                    await logWatchedRecord(film.tmdbId, 'movie');
+                                    設定已確認(true);
+                                    設定編輯模式(false);
+                                    await onUpdated?.();
+                                    toast.success('✅ 已儲存觀看紀錄');
+                                  }}
+                                >
+                                  ✅ 確認紀錄
+                                </Button>
+                                {已確認 && (
+                                  <Button variant="ghost" onClick={() => 設定編輯模式(false)}>
+                                    取消編輯
+                                  </Button>
+                                )}
+                              </div>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-4">
