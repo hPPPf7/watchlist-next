@@ -340,7 +340,7 @@ export function DetailDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onOpenChange(false)}>
       <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-      <DialogContent className="hide-close-button fixed left-1/2 top-1/2 z-50 min-h-[60vh] max-h-[90vh] w-full max-w-full -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:max-w-5xl overflow-y-auto">
+      <DialogContent className="hide-close-button fixed left-1/2 top-1/2 z-50 max-h-[90vh] min-h-[60vh] w-full max-w-full -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:max-w-5xl">
         {' '}
         <DialogTitle asChild>
           <VisuallyHidden>
@@ -351,7 +351,7 @@ export function DetailDialog({
           顯示這部作品的基本資訊、劇情簡介與觀看紀錄
         </DialogDescription>
         {film && (
-          <div className="relative flex max-h-[90vh] flex-col overflow-y-auto">
+          <div className="relative flex max-h-[90vh] flex-col">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
               <TabsList className="flex justify-center bg-zinc-800 p-2">
                 <TabsTrigger value="info" className="flex-1">
@@ -362,7 +362,7 @@ export function DetailDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 gap-6 overflow-y-auto p-6 max-h-[calc(90vh-5rem)]">
+              <div className="max-h-[calc(90vh-5rem)] flex-1 gap-6 p-6">
                 {loading ? (
                   <div className="w-full animate-pulse text-center text-sm text-gray-400">
                     載入中...
@@ -430,7 +430,7 @@ export function DetailDialog({
                                   </Button>
 
                                   {film.類型 === 'tv' && (
-                                    <div className="text-xs text-zinc-400 text-right">
+                                    <div className="text-right text-xs text-zinc-400">
                                       {(() => {
                                         const record =
                                           film.已看紀錄?.episodes ??
@@ -531,7 +531,7 @@ export function DetailDialog({
                           {已確認 && !編輯模式 ? (
                             <>
                               <div className="flex flex-col items-center gap-2">
-                                <p className="text-lg text-zinc-200 font-semibold">
+                                <p className="text-lg font-semibold text-zinc-200">
                                   🎬 目前紀錄：{' '}
                                   {觀看日期 === 'forgot'
                                     ? '❓ 忘記日期'
@@ -674,7 +674,7 @@ export function DetailDialog({
                             </select>
                           </div>
                           <div
-                            className="grid max-h-[50vh] gap-2 overflow-y-auto pr-1"
+                            className="grid max-h-[50vh] gap-2 overflow-y-scroll pr-1"
                             ref={集數容器Ref}
                           >
                             {集數資料.map((ep) => {
