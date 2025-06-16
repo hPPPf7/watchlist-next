@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { StyledCalendar } from '@/components/inputs/StyledCalendar';
 import { logWatchedRecord } from '@/lib/popular';
 import { isValid } from 'date-fns';
+import { useRef } from 'react';
 
 interface DetailDialogProps {
   film: Film | null;
@@ -68,6 +69,76 @@ export function DetailDialog({
   const [目前選擇的集數ID, 設定目前選擇的集數ID] = useState<number | null>(null);
   const [暫存日期, 設定暫存日期] = useState<Date | null>(null);
   const [編輯模式, 設定編輯模式] = useState(false);
+  const 集數容器Ref = useRef<HTMLDivElement | null>(null);
+  const [要自動捲動的集數, 設定要自動捲動的集數] = useState<{
+    season: number;
+    episode: number;
+  } | null>(null);
+  const 是否已看過 =
+    film?.類型 === 'movie' ? 已觀看日期文字 !== null : Object.keys(集數日期).length > 0;
+
+  function findNextUnwatchedEpisode(
+    episodes: Record<string, any>,
+    seasonEpisodes: any[],
+  ): {
+    season: number;
+    episode: number;
+  } | null {
+    const watchedSet = new Set(Object.keys(episodes || {}));
+    for (const ep of seasonEpisodes) {
+      const key = `${ep.season_number}-${ep.episode_number}`;
+      if (!watchedSet.has(key)) {
+        return {
+          season: ep.season_number,
+          episode: ep.episode_number,
+        };
+      }
+    }
+    return null; // 全部都看過了
+  }
+
+  function findLastWatchedEpisode(episodes: Record<string, any>): {
+    season: number;
+    episode: number;
+  } | null {
+    const entries = Object.entries(episodes || {}).filter(([_, v]) => !!v);
+    if (entries.length === 0) return null;
+
+    entries.sort((a, b) => {
+      const aDate = typeof a[1]?.toDate === 'function' ? a[1].toDate() : new Date(a[1]);
+      const bDate = typeof b[1]?.toDate === 'function' ? b[1].toDate() : new Date(b[1]);
+      return bDate.getTime() - aDate.getTime();
+    });
+
+    const [key] = entries[0];
+    const [seasonStr, episodeStr] = key.split('-');
+    return {
+      season: parseInt(seasonStr, 10),
+      episode: parseInt(episodeStr, 10),
+    };
+  }
+
+  function scrollToEpisode(season: number, episode: number) {
+    const key = `S${season}E${episode}`;
+    const el = document.querySelector(`[data-episode="${key}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      console.warn(`⚠️ 無法找到集數元素: [data-episode="${key}"]`);
+    }
+  }
+
+  useEffect(() => {
+    if (!要自動捲動的集數) return;
+
+    const key = `S${要自動捲動的集數.season}E${要自動捲動的集數.episode}`;
+    const el = 集數容器Ref.current?.querySelector(`[data-episode="${key}"]`);
+
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      設定要自動捲動的集數(null); // 清除，避免重複
+    }
+  }, [集數資料, 要自動捲動的集數]);
 
   useEffect(() => {
     if (open && film) {
@@ -102,9 +173,43 @@ export function DetailDialog({
           設定季資料(資料.seasons || []);
           const firstSeason =
             資料.seasons?.find((s: any) => s.season_number === 1) || 資料.seasons?.[0];
-          if (firstSeason) {
-            設定選擇的季(firstSeason.season_number);
-            await 載入集數(film.tmdbId, firstSeason.season_number);
+          const record =
+            film.已看紀錄?.episodes ??
+            film.詳細?.watchRecord?.episodes ??
+            film.詳細?.已看紀錄?.episodes ??
+            {};
+
+          const lastWatched = findLastWatchedEpisode(record); // 👈 你等等會加這個函式
+
+          const 要載入的季 = lastWatched?.season ?? firstSeason?.season_number;
+
+          if (要載入的季 != null) {
+            設定選擇的季(要載入的季);
+            await 載入集數(film.tmdbId, 要載入的季);
+
+            if (要載入的季 != null) {
+              設定選擇的季(要載入的季);
+              await 載入集數(film.tmdbId, 要載入的季);
+
+              const seasonInfo = 資料.seasons?.find(
+                (s: { season_number: number; episode_count?: number }) =>
+                  s.season_number === 要載入的季,
+              );
+
+              const seasonEpisodes =
+                seasonInfo?.episode_count != null
+                  ? Array.from({ length: seasonInfo.episode_count }, (_, i) => ({
+                      season_number: 要載入的季,
+                      episode_number: i + 1,
+                    }))
+                  : [];
+
+              const nextEpisode = findNextUnwatchedEpisode(record, seasonEpisodes);
+
+              if (nextEpisode) {
+                設定要自動捲動的集數(nextEpisode);
+              }
+            }
           }
         } catch (err) {
           console.error('載入季資料失敗', err);
@@ -170,8 +275,20 @@ export function DetailDialog({
       const parsed: Record<string, Date | null> = {};
 
       for (const key in record) {
-        const d = new Date(record[key]);
-        parsed[key] = isValid(d) ? d : null;
+        const value = record[key];
+        let date: Date | null = null;
+
+        if (value instanceof Date && isValid(value)) {
+          date = value;
+        } else if (value && typeof value.toDate === 'function') {
+          const d = value.toDate();
+          date = isValid(d) ? d : null;
+        } else if (typeof value === 'string') {
+          const d = new Date(value);
+          date = isValid(d) ? d : null;
+        }
+
+        parsed[key] = date;
       }
 
       設定集數日期(parsed);
@@ -282,14 +399,54 @@ export function DetailDialog({
 
                             {/* 👉 加入/移除清單按鈕 */}
                             {onToggleWatchlist &&
-                              (已觀看日期文字 ? (
-                                <Button
-                                  size="sm"
-                                  disabled
-                                  className="cursor-default border border-green-500 bg-transparent text-green-500"
-                                >
-                                  已觀看：{已觀看日期文字}
-                                </Button>
+                              (是否已看過 ? (
+                                <div className="flex flex-col items-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    disabled
+                                    className="cursor-default border border-green-500 bg-transparent text-green-500"
+                                  >
+                                    {(() => {
+                                      const record =
+                                        film.已看紀錄?.episodes ??
+                                        film.詳細?.watchRecord?.episodes ??
+                                        film.詳細?.已看紀錄?.episodes ??
+                                        {};
+                                      const entries = Object.entries(record).filter(
+                                        ([_, v]) => !!v,
+                                      );
+
+                                      const latestKey = entries.sort((a, b) => {
+                                        const [aSeason, aEp] = a[0].split('-').map(Number);
+                                        const [bSeason, bEp] = b[0].split('-').map(Number);
+                                        if (bSeason !== aSeason) return bSeason - aSeason;
+                                        return bEp - aEp;
+                                      })[0]?.[0];
+
+                                      return latestKey
+                                        ? `看到 ${latestKey.replace('-', 'E').replace(/^/, 'S')}`
+                                        : '已觀看';
+                                    })()}
+                                  </Button>
+
+                                  {film.類型 === 'tv' && (
+                                    <div className="text-xs text-zinc-400 text-right">
+                                      {(() => {
+                                        const record =
+                                          film.已看紀錄?.episodes ??
+                                          film.詳細?.watchRecord?.episodes ??
+                                          film.詳細?.已看紀錄?.episodes ??
+                                          {};
+                                        const entries = Object.entries(record).filter(
+                                          ([_, v]) => !!v,
+                                        );
+                                        const totalWatched = entries.length;
+                                        const totalEpisodes = 詳細資料?.number_of_episodes ?? '?';
+                                        return `${totalWatched} / ${totalEpisodes} 集`;
+                                      })()}
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
                                 <Button
                                   size="sm"
@@ -516,13 +673,20 @@ export function DetailDialog({
                               ))}
                             </select>
                           </div>
-                          <div className="grid max-h-[50vh] gap-2 overflow-y-auto pr-1">
+                          <div
+                            className="grid max-h-[50vh] gap-2 overflow-y-auto pr-1"
+                            ref={集數容器Ref}
+                          >
                             {集數資料.map((ep) => {
                               const key = `${ep.season_number}-${ep.episode_number}`;
                               const selectedDate = 集數日期[key] ?? null;
 
                               return (
-                                <div key={ep.id} className="w-full">
+                                <div
+                                  key={ep.id}
+                                  className="w-full"
+                                  data-episode={`S${ep.season_number}E${ep.episode_number}`}
+                                >
                                   {/* 上層列 */}
                                   <div
                                     className={cn(
@@ -543,6 +707,23 @@ export function DetailDialog({
                                           prev === ep.id ? null : ep.id,
                                         );
                                         設定暫存日期(selectedDate);
+
+                                        // ✅ 加這段：展開後自動捲動到該集數最上方
+                                        setTimeout(() => {
+                                          const el = document.querySelector(
+                                            `[data-episode="S${ep.season_number}E${ep.episode_number}"]`,
+                                          );
+                                          if (el) {
+                                            el.scrollIntoView({
+                                              behavior: 'smooth',
+                                              block: 'start',
+                                            });
+                                            // 微調讓日曆完全顯示（上方多 100px 空間）
+                                            setTimeout(() => {
+                                              window.scrollBy({ top: -100, behavior: 'smooth' });
+                                            }, 300);
+                                          }
+                                        }, 50);
                                       }}
                                     >
                                       📅{' '}
@@ -566,7 +747,20 @@ export function DetailDialog({
                                               format(date, 'yyyy-MM-dd'),
                                             );
                                             await logWatchedRecord(film.tmdbId, 'tv');
-                                            設定集數日期((prev) => ({ ...prev, [key]: date }));
+
+                                            // ✅ 更新本地 state
+                                            設定集數日期((prev) => ({
+                                              ...prev,
+                                              [key]: date,
+                                            }));
+
+                                            // ✅ 不用 reload 整季資料
+                                            設定目前選擇的集數ID(null);
+                                            await onUpdated?.();
+                                            toast.success(
+                                              `✅ 已儲存：${format(date, 'yyyy/MM/dd')}`,
+                                            );
+
                                             設定目前選擇的集數ID(null);
                                             await onUpdated?.();
                                             toast.success(
