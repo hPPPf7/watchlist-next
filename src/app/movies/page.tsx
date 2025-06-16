@@ -18,6 +18,10 @@ function 分類電影(清單: 清單資料) {
 
   for (const [id, item] of Object.entries(清單)) {
     if (item.類型 !== 'movie') continue;
+
+    // ⛔️ 如果已看過，就不要分類進來
+    if (item.已看紀錄?.movie) continue;
+
     const date = item.上映日 ? new Date(item.上映日) : null;
     if (!date || isNaN(date.getTime()) || date.getTime() > Date.now()) {
       即將上映.push([id, item]);
@@ -36,12 +40,23 @@ function 分類電影(清單: 清單資料) {
   return { 即將上映, 已上映 };
 }
 
+function itemTime(item: Film) {
+  const raw = item.已看紀錄?.movie;
+
+  if (!raw) return 0;
+
+  if (typeof raw === 'string') return new Date(raw).getTime();
+  if (typeof raw === 'object' && typeof raw.toDate === 'function') return raw.toDate().getTime();
+
+  return 0;
+}
+
 export default function MovieTrackerPage() {
   const { 使用者 } = useUser();
   const [清單, 設定清單] = useState<清單資料>({});
   const [載入中, 設定載入中] = useState(true);
   const openDetail = useOpenDetail();
-  const [目前Tab, 設定目前Tab] = useState('countdown');
+  const [目前Tab, 設定目前Tab] = useState('watchlist');
 
   async function 載入清單() {
     設定載入中(true);
@@ -111,6 +126,12 @@ export default function MovieTrackerPage() {
           >
             📌 <span className="ml-1">電影清單</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="watched"
+            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+          >
+            ✅ <span className="ml-1">已看清單</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="countdown">
@@ -148,6 +169,33 @@ export default function MovieTrackerPage() {
                   <p className="text-sm text-gray-500">上映日：{formatDate(item.上映日 || '')}</p>
                 </HorizontalFilmCard>
               ))}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="watched">
+          {載入中 ? (
+            <EmptyState text="載入中..." loading />
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(清單)
+                .filter(([_, item]) => item.已看紀錄?.movie)
+                .sort((a, b) => {
+                  const aTime = itemTime(a[1]);
+                  const bTime = itemTime(b[1]);
+                  return bTime - aTime; // 依觀看時間倒序
+                })
+                .map(([id, item]) => (
+                  <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
+                    <p className="text-sm text-gray-500">
+                      🎬 觀看日期：
+                      {formatDate(
+                        typeof item.已看紀錄?.movie === 'string'
+                          ? item.已看紀錄.movie
+                          : item.已看紀錄?.movie?.toDate?.().toISOString?.() || '',
+                      )}
+                    </p>
+                  </HorizontalFilmCard>
+                ))}
             </div>
           )}
         </TabsContent>

@@ -102,7 +102,7 @@ export async function updateMovieWatchDate(tmdbId: number, date: string | null) 
 
   const ref = doc(db, 'users', 使用者.uid);
   await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}.已看紀錄.movie`]: date ? Timestamp.now() : null,
+    [`追蹤清單.${tmdbId}.已看紀錄.movie`]: date ? Timestamp.fromDate(new Date(date)) : null,
   });
 }
 
@@ -116,6 +116,8 @@ export async function updateEpisodeWatchDate(
 
   const ref = doc(db, 'users', 使用者.uid);
   await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: date ? Timestamp.now() : null,
+    [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: date
+      ? Timestamp.fromDate(new Date(date))
+      : null,
   });
 }
