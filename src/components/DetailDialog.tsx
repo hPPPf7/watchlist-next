@@ -240,31 +240,36 @@ export function DetailDialog({
                               )}
                             </h2>
 
-                            {已觀看日期文字 && (
-                              <p className="text-green-400 text-sm">✅ 已觀看：{已觀看日期文字}</p>
-                            )}
-
                             {/* 👉 加入/移除清單按鈕 */}
-                            {onToggleWatchlist && (
-                              <Button
-                                size="sm"
-                                className={
-                                  is追蹤中
-                                    ? 'bg-red-600 hover:bg-red-500 text-white'
-                                    : 'bg-purple-600 hover:bg-purple-500 text-white'
-                                }
-                                disabled={is處理中}
-                                onClick={async () => {
-                                  if (!film) return;
-                                  設定暫時追蹤狀態('loading');
-                                  await onToggleWatchlist(film);
-                                  設定暫時追蹤狀態(!is追蹤中);
-                                  onUpdated?.();
-                                }}
-                              >
-                                {is處理中 ? '處理中...' : is追蹤中 ? '移除清單' : '加入清單'}
-                              </Button>
-                            )}
+                            {onToggleWatchlist &&
+                              (已觀看日期文字 ? (
+                                <Button
+                                  size="sm"
+                                  disabled
+                                  className="text-green-500 border border-green-500 bg-transparent cursor-default"
+                                >
+                                  已觀看：{已觀看日期文字}
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  className={
+                                    is追蹤中
+                                      ? 'bg-red-600 hover:bg-red-500 text-white'
+                                      : 'bg-purple-600 hover:bg-purple-500 text-white'
+                                  }
+                                  disabled={is處理中}
+                                  onClick={async () => {
+                                    if (!film) return;
+                                    設定暫時追蹤狀態('loading');
+                                    await onToggleWatchlist(film);
+                                    設定暫時追蹤狀態(!is追蹤中);
+                                    onUpdated?.();
+                                  }}
+                                >
+                                  {is處理中 ? '處理中...' : is追蹤中 ? '移除清單' : '加入清單'}
+                                </Button>
+                              ))}
                           </div>
 
                           {/* 類型＋年份 */}
