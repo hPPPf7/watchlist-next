@@ -81,6 +81,7 @@ export default function MovieTrackerPage() {
   }, [目前Tab]);
 
   const { 即將上映, 已上映 } = 分類電影(清單);
+  const 已看 = Object.entries(清單).filter(([_, item]) => item.已看紀錄?.movie);
 
   const handleToggleWatchlist = async (film: Film) => {
     const is追蹤中 = !!清單[film.tmdbId.toString()];
@@ -118,19 +119,19 @@ export default function MovieTrackerPage() {
             value="countdown"
             className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
           >
-            ⏳ <span className="ml-1">即將上映</span>
+            ⏳ <span className="ml-1">即將上映 ({即將上映.length})</span>
           </TabsTrigger>
           <TabsTrigger
             value="watchlist"
             className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
           >
-            📌 <span className="ml-1">電影清單</span>
+            📌 <span className="ml-1">電影清單 ({已上映.length})</span>
           </TabsTrigger>
           <TabsTrigger
             value="watched"
             className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
           >
-            ✅ <span className="ml-1">已看清單</span>
+            ✅ <span className="ml-1">已看清單 ({已看.length})</span>
           </TabsTrigger>
         </TabsList>
 

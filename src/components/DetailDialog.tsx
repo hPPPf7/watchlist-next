@@ -43,6 +43,22 @@ export function DetailDialog({
   });
   const [loading, 設定loading] = useState(false);
   const [error, 設定error] = useState<string | null>(null);
+  const [已觀看日期文字, 設定已觀看日期文字] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (film?.類型 === 'movie') {
+      const raw = film.詳細?.watchRecord?.movie;
+      if (typeof raw === 'string') {
+        設定已觀看日期文字(raw);
+      } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
+        const date = raw.toDate();
+        設定已觀看日期文字(date.toISOString().slice(0, 10));
+      } else {
+        設定已觀看日期文字(null);
+      }
+    }
+  }, [film]);
+
   const [activeTab, setActiveTab] = useState('info');
   const [季資料, 設定季資料] = useState<any[]>([]);
   const [集數資料, 設定集數資料] = useState<any[]>([]);
@@ -120,17 +136,21 @@ export function DetailDialog({
   }
 
   useEffect(() => {
-    if (open && film?.類型 === 'movie') {
-      const 記錄日期 = film.詳細?.watchRecord?.movie;
-      if (typeof 記錄日期 === 'string') {
-        設定觀看日期(new Date(記錄日期));
-        設定已確認(true);
+    if (film?.類型 === 'movie') {
+      const raw = film.詳細?.watchRecord?.movie;
+
+      if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        設定已觀看日期文字(raw);
+      } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
+        const date = raw.toDate();
+        if (!isNaN(date.getTime())) {
+          設定已觀看日期文字(date.toISOString().slice(0, 10));
+        }
       } else {
-        設定觀看日期(null);
-        設定已確認(false);
+        設定已觀看日期文字(null);
       }
     }
-  }, [open, film]);
+  }, [film]);
 
   useEffect(() => {
     if (open && film) {
@@ -225,6 +245,10 @@ export function DetailDialog({
                                 </span>
                               )}
                             </h2>
+
+                            {已觀看日期文字 && (
+                              <p className="text-green-400 text-sm">✅ 已觀看：{已觀看日期文字}</p>
+                            )}
 
                             {/* 👉 加入/移除清單按鈕 */}
                             {onToggleWatchlist && (
@@ -388,7 +412,7 @@ export function DetailDialog({
                                   if (!film || film.類型 !== 'movie') return;
                                   const formatted =
                                     觀看日期 === 'forgot'
-                                      ? 'forgot'
+                                      ? null // ⛳️ 重點是這裡要變成 null
                                       : 觀看日期 instanceof Date
                                         ? format(觀看日期, 'yyyy-MM-dd')
                                         : null;
