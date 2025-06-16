@@ -96,13 +96,14 @@ export async function updateWatchlist(newWatchlist: Record<string, any>): Promis
   await setDoc(ref, { 追蹤清單: newWatchlist }, { merge: true });
 }
 
-export async function updateMovieWatchDate(tmdbId: number, date: string | null) {
+export async function updateMovieWatchDate(tmdbId: number, date: string | 'forgot' | null) {
   const 使用者 = getCurrentUser();
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
   await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}.已看紀錄.movie`]: date ? Timestamp.fromDate(new Date(date)) : null,
+    [`追蹤清單.${tmdbId}.已看紀錄.movie`]:
+      date && date !== 'forgot' ? Timestamp.fromDate(new Date(date)) : date,
   });
 }
 

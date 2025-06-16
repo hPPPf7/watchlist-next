@@ -44,21 +44,6 @@ export function DetailDialog({
   const [loading, 設定loading] = useState(false);
   const [error, 設定error] = useState<string | null>(null);
   const [已觀看日期文字, 設定已觀看日期文字] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (film?.類型 === 'movie') {
-      const raw = film.詳細?.watchRecord?.movie;
-      if (typeof raw === 'string') {
-        設定已觀看日期文字(raw);
-      } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
-        const date = raw.toDate();
-        設定已觀看日期文字(date.toISOString().slice(0, 10));
-      } else {
-        設定已觀看日期文字(null);
-      }
-    }
-  }, [film]);
-
   const [activeTab, setActiveTab] = useState('info');
   const [季資料, 設定季資料] = useState<any[]>([]);
   const [集數資料, 設定集數資料] = useState<any[]>([]);
@@ -135,20 +120,29 @@ export function DetailDialog({
     }
   }
 
+  /** 解析電影觀看日期，支援 string、Timestamp 或 'forgot' */
   useEffect(() => {
-    if (film?.類型 === 'movie') {
-      const raw = film.詳細?.watchRecord?.movie;
+    if (film?.類型 !== 'movie') {
+      設定已觀看日期文字(null);
+      return;
+    }
 
-      if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-        設定已觀看日期文字(raw);
-      } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
-        const date = raw.toDate();
-        if (!isNaN(date.getTime())) {
-          設定已觀看日期文字(date.toISOString().slice(0, 10));
-        }
+    const raw = film.已看紀錄?.movie ?? film.詳細?.watchRecord?.movie ?? film.詳細?.已看紀錄?.movie;
+
+    if (!raw || raw === 'forgot') {
+      設定已觀看日期文字(null);
+    } else if (typeof raw === 'string') {
+      const matched = /^\d{4}-\d{2}-\d{2}$/.exec(raw);
+      設定已觀看日期文字(matched ? matched[0] : null);
+    } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
+      const date = raw.toDate();
+      if (!isNaN(date.getTime())) {
+        設定已觀看日期文字(date.toISOString().slice(0, 10));
       } else {
         設定已觀看日期文字(null);
       }
+    } else {
+      設定已觀看日期文字(null);
     }
   }, [film]);
 
@@ -412,13 +406,20 @@ export function DetailDialog({
                                   if (!film || film.類型 !== 'movie') return;
                                   const formatted =
                                     觀看日期 === 'forgot'
-                                      ? null // ⛳️ 重點是這裡要變成 null
+                                      ? 'forgot'
                                       : 觀看日期 instanceof Date
                                         ? format(觀看日期, 'yyyy-MM-dd')
                                         : null;
                                   await updateMovieWatchDate(film.tmdbId, formatted);
                                   await logWatchedRecord(film.tmdbId, 'movie');
+                                  if (觀看日期 instanceof Date) {
+                                    const text = format(觀看日期, 'yyyy-MM-dd');
+                                    設定已觀看日期文字(text);
+                                  } else {
+                                    設定已觀看日期文字(null);
+                                  }
                                   設定已確認(true);
+                                  await onUpdated?.();
                                   toast.success('✅ 已儲存觀看紀錄');
                                 }}
                               >
@@ -435,6 +436,8 @@ export function DetailDialog({
                                     await updateMovieWatchDate(film.tmdbId, null);
                                     設定觀看日期(null);
                                     設定已確認(false);
+                                    設定已觀看日期文字(null);
+                                    await onUpdated?.();
                                     toast.success('🗑️ 已取消觀看紀錄');
                                   }}
                                 >
