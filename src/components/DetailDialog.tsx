@@ -130,8 +130,10 @@ export function DetailDialog({
 
     const raw = film.已看紀錄?.movie ?? film.詳細?.watchRecord?.movie ?? film.詳細?.已看紀錄?.movie;
 
-    if (!raw || raw === 'forgot') {
+    if (!raw) {
       設定已觀看日期文字(null);
+    } else if (raw === 'forgot') {
+      設定已觀看日期文字('忘記日期');
     } else if (typeof raw === 'string') {
       const matched = /^\d{4}-\d{2}-\d{2}$/.exec(raw);
       設定已觀看日期文字(matched ? matched[0] : null);
@@ -216,7 +218,7 @@ export function DetailDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onOpenChange(false)}>
       <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-      <DialogContent className="hide-close-button fixed left-1/2 top-1/2 z-50 w-full max-w-full -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:max-w-5xl">
+      <DialogContent className="hide-close-button fixed left-1/2 top-1/2 z-50 min-h-[60vh] w-full max-w-full -translate-x-1/2 -translate-y-1/2 overflow-hidden sm:max-w-5xl">
         {' '}
         <DialogTitle asChild>
           <VisuallyHidden>
@@ -259,7 +261,7 @@ export function DetailDialog({
                           </div>
                         </div>
                         <div className="flex flex-1 flex-col space-y-4">
-                          <div className="flex justify-between items-start">
+                          <div className="flex items-start justify-between">
                             <h2 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
                               {film.title}
                               {film.類型 === 'tv' && 詳細資料?.status && (
@@ -279,7 +281,7 @@ export function DetailDialog({
                                 <Button
                                   size="sm"
                                   disabled
-                                  className="text-green-500 border border-green-500 bg-transparent cursor-default"
+                                  className="cursor-default border border-green-500 bg-transparent text-green-500"
                                 >
                                   已觀看：{已觀看日期文字}
                                 </Button>
@@ -288,8 +290,8 @@ export function DetailDialog({
                                   size="sm"
                                   className={
                                     is追蹤中
-                                      ? 'bg-red-600 hover:bg-red-500 text-white'
-                                      : 'bg-purple-600 hover:bg-purple-500 text-white'
+                                      ? 'bg-red-600 text-white hover:bg-red-500'
+                                      : 'bg-purple-600 text-white hover:bg-purple-500'
                                   }
                                   disabled={is處理中}
                                   onClick={async () => {
@@ -366,29 +368,34 @@ export function DetailDialog({
                         <div className="flex flex-col items-center gap-4">
                           {已確認 && !編輯模式 ? (
                             <>
-                              <h3 className="text-xl font-bold text-white">🎬 目前紀錄</h3>
-                              <p className="text-lg text-zinc-200">
-                                {觀看日期 === 'forgot'
-                                  ? '❓ 忘記日期'
-                                  : format(觀看日期 as Date, 'yyyy-MM-dd')}
-                              </p>
-                              <div className="mt-4 flex gap-3">
-                                <Button onClick={() => 設定編輯模式(true)}>✏️ 編輯紀錄</Button>
-                                <Button
-                                  variant="destructive"
-                                  onClick={async () => {
-                                    if (!film) return;
-                                    await updateMovieWatchDate(film.tmdbId, null);
-                                    設定觀看日期(null);
-                                    設定已確認(false);
-                                    設定已觀看日期文字(null);
-                                    設定編輯模式(false);
-                                    await onUpdated?.();
-                                    toast.success('🗑️ 已取消觀看紀錄');
-                                  }}
-                                >
-                                  🗑️ 取消紀錄
-                                </Button>
+                              <div className="flex flex-col items-center gap-2">
+                                <p className="text-lg text-zinc-200 font-semibold">
+                                  🎬 目前紀錄：{' '}
+                                  {觀看日期 === 'forgot'
+                                    ? '❓ 忘記日期'
+                                    : format(觀看日期 as Date, 'yyyy-MM-dd')}
+                                </p>
+                                <div className="flex gap-3">
+                                  <Button size="sm" onClick={() => 設定編輯模式(true)}>
+                                    ✏️ 編輯紀錄
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={async () => {
+                                      if (!film) return;
+                                      await updateMovieWatchDate(film.tmdbId, null);
+                                      設定觀看日期(null);
+                                      設定已確認(false);
+                                      設定已觀看日期文字(null);
+                                      設定編輯模式(false);
+                                      await onUpdated?.();
+                                      toast.success('🗑️ 已取消觀看紀錄');
+                                    }}
+                                  >
+                                    🗑️ 取消紀錄
+                                  </Button>
+                                </div>
                               </div>
                             </>
                           ) : (
@@ -404,16 +411,41 @@ export function DetailDialog({
 
                                     if (date <= today) {
                                       設定觀看日期(date);
+                                      設定輸入錯誤(false);
+                                      設定錯誤訊息('');
                                     } else {
-                                      toast.error('❌ 日期不能晚於今天');
+                                      設定輸入錯誤(true);
+                                      設定錯誤訊息('日期不能晚於今天');
                                     }
                                   }}
                                 />
+                                {觀看日期 instanceof Date && (
+                                  <p className="text-sm text-zinc-300">
+                                    目前選擇：{format(觀看日期, 'yyyy-MM-dd')}
+                                  </p>
+                                )}
+                                {輸入錯誤 && <p className="text-sm text-red-400">{錯誤訊息}</p>}
                               </div>
 
                               <div className="flex gap-2">
-                                <Button onClick={() => 設定觀看日期(new Date())}>📅 今天</Button>
-                                <Button onClick={() => 設定觀看日期('forgot')}>❓ 忘記日期</Button>
+                                <Button
+                                  onClick={() => {
+                                    設定觀看日期(new Date());
+                                    設定輸入錯誤(false);
+                                    設定錯誤訊息('');
+                                  }}
+                                >
+                                  📅 今天
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    設定觀看日期('forgot');
+                                    設定輸入錯誤(false);
+                                    設定錯誤訊息('');
+                                  }}
+                                >
+                                  ❓ 忘記日期
+                                </Button>
                               </div>
 
                               <div className="flex gap-2">
@@ -421,12 +453,27 @@ export function DetailDialog({
                                   className="bg-green-600"
                                   onClick={async () => {
                                     if (!film) return;
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+
+                                    if (
+                                      觀看日期 !== 'forgot' &&
+                                      觀看日期 instanceof Date &&
+                                      觀看日期 > today
+                                    ) {
+                                      設定輸入錯誤(true);
+                                      設定錯誤訊息('日期不能晚於今天');
+                                      return;
+                                    }
                                     const formatted =
                                       觀看日期 === 'forgot'
                                         ? 'forgot'
                                         : format(觀看日期 as Date, 'yyyy-MM-dd');
                                     await updateMovieWatchDate(film.tmdbId, formatted);
                                     await logWatchedRecord(film.tmdbId, 'movie');
+                                    設定已觀看日期文字(
+                                      formatted === 'forgot' ? '忘記日期' : formatted,
+                                    );
                                     設定已確認(true);
                                     設定編輯模式(false);
                                     await onUpdated?.();
