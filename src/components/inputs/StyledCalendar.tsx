@@ -11,44 +11,28 @@ interface StyledCalendarProps {
 }
 
 // 🧩 自訂 Caption 組件
-function CustomCaption(props: {
-  date: Date;
-  onChangeMonth?: (date: Date) => void;
-  fromYear: number;
-  toYear: number;
-  localeCode: string;
-}) {
-  const years: number[] = [];
-  for (let y = props.fromYear; y <= props.toYear; y++) years.push(y);
+function CustomCaption(props: { displayMonth: Date; onMonthChange?: (date: Date) => void }) {
+  const handlePrevious = () => {
+    const { displayMonth, onMonthChange } = props;
+    onMonthChange?.(new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1));
+  };
 
-  const monthIndex = props.date.getMonth();
-  const yearIndex = props.date.getFullYear();
+  const handleNext = () => {
+    const { displayMonth, onMonthChange } = props;
+    onMonthChange?.(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 1));
+  };
 
   return (
-    <div className="mb-2 flex items-center justify-center gap-2">
-      <select
-        className="w-24 rounded border border-zinc-600 bg-zinc-800 p-1 text-white"
-        value={monthIndex}
-        onChange={(e) => props.onChangeMonth?.(new Date(yearIndex, Number(e.target.value)))}
-      >
-        {Array.from({ length: 12 }).map((_, i) => (
-          <option key={i} value={i}>
-            {new Intl.DateTimeFormat(props.localeCode, { month: 'long' }).format(new Date(2000, i))}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className="w-24 rounded border border-zinc-600 bg-zinc-800 p-1 text-white"
-        value={yearIndex}
-        onChange={(e) => props.onChangeMonth?.(new Date(Number(e.target.value), monthIndex))}
-      >
-        {years.map((y) => (
-          <option key={y} value={y}>
-            {y}
-          </option>
-        ))}
-      </select>
+    <div className="mb-2 flex w-full items-center justify-between">
+      <button type="button" className="px-2" onClick={handlePrevious} aria-label="Previous month">
+        ◀
+      </button>
+      <div className="flex-1 text-center">
+        {`${props.displayMonth.getFullYear()} 年 ${props.displayMonth.getMonth() + 1} 月`}
+      </div>
+      <button type="button" className="px-2" onClick={handleNext} aria-label="Next month">
+        ▶
+      </button>
     </div>
   );
 }
@@ -56,7 +40,6 @@ function CustomCaption(props: {
 export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
   const fromDate = new Date(1925, 0);
   const toDate = new Date();
-  const localeCode = 'zh-TW';
 
   return (
     <div
@@ -72,14 +55,7 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
         toDate={toDate}
         components={
           {
-            Caption: (captionProps: any) => (
-              <CustomCaption
-                {...captionProps}
-                fromYear={fromDate.getFullYear()}
-                toYear={toDate.getFullYear()}
-                localeCode={localeCode}
-              />
-            ),
+            Caption: (captionProps: any) => <CustomCaption {...captionProps} />,
           } as any
         }
         classNames={{
