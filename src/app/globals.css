@@ -111,3 +111,15 @@
 .animate-fade-out {
   animation: fade-out 0.5s ease-out forwards;
 }
+
+/* 覆蓋 DayPicker 導航箭頭顏色（白色） */
+button[class*='nav_button'] svg {
+  color: white !important;
+  fill: white !important;
+}
+
+/* 滑鼠懸停時變綠 */
+button[class*='nav_button']:hover svg {
+  color: #4ade80 !important; /* tailwind 的 text-green-400 */
+  fill: #4ade80 !important;
+}

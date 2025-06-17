@@ -1,44 +1,17 @@
 'use client';
 
-import { DayPicker, useDayPicker, type SelectHandler } from 'react-day-picker';
-import 'react-day-picker/src/style.css';
+import { DayPicker } from 'react-day-picker';
 import { zhTW } from 'date-fns/locale';
+import 'react-day-picker/dist/style.css';
 
 interface StyledCalendarProps {
   selected?: Date;
   onSelect?: (date?: Date) => void;
 }
 
-// 🧩 自訂 Caption 組件
-function CustomCaption(props: { calendarMonth: { date: Date }; displayIndex: number }) {
-  const { goToMonth } = useDayPicker();
-  const { calendarMonth } = props;
-  const handlePrevious = () => {
-    goToMonth(new Date(calendarMonth.date.getFullYear(), calendarMonth.date.getMonth() - 1, 1));
-  };
-
-  const handleNext = () => {
-    goToMonth(new Date(calendarMonth.date.getFullYear(), calendarMonth.date.getMonth() + 1, 1));
-  };
-
-  return (
-    <div className="mb-2 flex w-full items-center justify-between">
-      <button type="button" className="px-2" onClick={handlePrevious} aria-label="Previous month">
-        ◀
-      </button>
-      <div className="flex-1 text-center">
-        {`${calendarMonth.date.getFullYear()} 年 ${calendarMonth.date.getMonth() + 1} 月`}
-      </div>
-      <button type="button" className="px-2" onClick={handleNext} aria-label="Next month">
-        ▶
-      </button>
-    </div>
-  );
-}
-
 export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
-  const fromDate = new Date(1925, 0);
-  const toDate = new Date();
+  const minDate = new Date(1925, 0);
+  const maxDate = new Date();
 
   return (
     <div
@@ -50,16 +23,15 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
         selected={selected}
         onSelect={onSelect}
         locale={zhTW}
-        startMonth={fromDate}
-        endMonth={toDate}
-        hidden={{ before: fromDate, after: toDate }}
-        hideNavigation
-        components={
-          {
-            Caption: (captionProps: any) => <CustomCaption {...captionProps} />,
-          } as any
-        }
+        disabled={{ after: maxDate }}
+        hidden={{ before: minDate, after: maxDate }} // ✅ 取代 fromDate/toDate
         classNames={{
+          // ✅ caption 變成上下左右排版
+          caption: 'mb-2 flex items-center justify-between px-2',
+          caption_label: 'text-white font-semibold text-base',
+          // ✅ 箭頭改色（強制套 text / fill）
+          nav_button:
+            'text-white hover:text-green-400 fill-white hover:fill-green-400 transition-colors duration-200',
           table: 'w-full border-collapse table-fixed',
           head_row: 'flex',
           row: 'flex',
@@ -67,9 +39,9 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
           cell: 'w-10 h-10 text-center',
           day: 'h-10 w-10 p-0 text-sm hover:bg-zinc-700 rounded-full',
           day_button: 'flex items-center justify-center w-full h-full',
-          selected: 'bg-green-500 text-white font-semibold', // 高亮整個圓
-          today: 'border-green-400 text-green-400', // 今天加一圈
-          day_selected: 'bg-green-500 text-black rounded-full',
+          selected: 'bg-green-500 text-white font-semibold',
+          today: 'border-green-400 text-green-400',
+          day_selected: 'bg-green-500 text-white rounded-full',
           day_today: 'border border-green-500 text-green-400 rounded-full',
         }}
       />
