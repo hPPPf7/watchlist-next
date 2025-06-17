@@ -185,18 +185,24 @@ export default function MovieTrackerPage() {
                   const bTime = itemTime(b[1]);
                   return bTime - aTime; // 依觀看時間倒序
                 })
-                .map(([id, item]) => (
-                  <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
-                    <p className="text-sm text-gray-500">
-                      🎬 觀看日期：
-                      {formatDate(
-                        typeof item.已看紀錄?.movie === 'string'
-                          ? item.已看紀錄.movie
-                          : item.已看紀錄?.movie?.toDate?.().toISOString?.() || '',
-                      )}
-                    </p>
-                  </HorizontalFilmCard>
-                ))}
+                .map(([id, item]) => {
+                  const watchedRaw = item.已看紀錄?.movie;
+                  const watchedDate =
+                    typeof watchedRaw === 'string'
+                      ? watchedRaw
+                      : watchedRaw?.toDate?.().toISOString?.() || '';
+
+                  return (
+                    <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
+                      <p className="text-sm text-gray-500">
+                        上映日：{formatDate(item.上映日 || '')}
+                      </p>
+                      <p className="mt-1 text-base font-bold text-green-400">
+                        觀看日期：{formatDate(watchedDate)}
+                      </p>
+                    </HorizontalFilmCard>
+                  );
+                })}
             </div>
           )}
         </TabsContent>
