@@ -1,25 +1,24 @@
 'use client';
 
-import { DayPicker } from 'react-day-picker';
-import type { SelectSingleEventHandler } from 'react-day-picker';
+import { DayPicker, useDayPicker, type SelectHandler } from 'react-day-picker';
 import 'react-day-picker/src/style.css';
 import { zhTW } from 'date-fns/locale';
 
 interface StyledCalendarProps {
   selected?: Date;
-  onSelect?: SelectSingleEventHandler;
+  onSelect?: (date?: Date) => void;
 }
 
 // 🧩 自訂 Caption 組件
-function CustomCaption(props: { displayMonth: Date; onMonthChange?: (date: Date) => void }) {
+function CustomCaption(props: { calendarMonth: { date: Date }; displayIndex: number }) {
+  const { goToMonth } = useDayPicker();
+  const { calendarMonth } = props;
   const handlePrevious = () => {
-    const { displayMonth, onMonthChange } = props;
-    onMonthChange?.(new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1));
+    goToMonth(new Date(calendarMonth.date.getFullYear(), calendarMonth.date.getMonth() - 1, 1));
   };
 
   const handleNext = () => {
-    const { displayMonth, onMonthChange } = props;
-    onMonthChange?.(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1, 1));
+    goToMonth(new Date(calendarMonth.date.getFullYear(), calendarMonth.date.getMonth() + 1, 1));
   };
 
   return (
@@ -28,7 +27,7 @@ function CustomCaption(props: { displayMonth: Date; onMonthChange?: (date: Date)
         ◀
       </button>
       <div className="flex-1 text-center">
-        {`${props.displayMonth.getFullYear()} 年 ${props.displayMonth.getMonth() + 1} 月`}
+        {`${calendarMonth.date.getFullYear()} 年 ${calendarMonth.date.getMonth() + 1} 月`}
       </div>
       <button type="button" className="px-2" onClick={handleNext} aria-label="Next month">
         ▶
@@ -51,15 +50,16 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
         selected={selected}
         onSelect={onSelect}
         locale={zhTW}
-        fromDate={fromDate}
-        toDate={toDate}
+        startMonth={fromDate}
+        endMonth={toDate}
+        hidden={{ before: fromDate, after: toDate }}
+        hideNavigation
         components={
           {
             Caption: (captionProps: any) => <CustomCaption {...captionProps} />,
           } as any
         }
         classNames={{
-          nav: 'hidden',
           table: 'w-full border-collapse table-fixed',
           head_row: 'flex',
           row: 'flex',
