@@ -2,6 +2,7 @@
 
 import { DayPicker } from 'react-day-picker';
 import type { SelectSingleEventHandler } from 'react-day-picker';
+import 'react-day-picker/src/style.css';
 import { zhTW } from 'date-fns/locale';
 
 interface StyledCalendarProps {
@@ -26,7 +27,7 @@ function CustomCaption(props: {
   return (
     <div className="mb-2 flex items-center justify-center gap-2">
       <select
-        className="bg-zinc-800 text-white p-1 rounded border border-zinc-600 w-24"
+        className="w-24 rounded border border-zinc-600 bg-zinc-800 p-1 text-white"
         value={monthIndex}
         onChange={(e) => props.onChangeMonth?.(new Date(yearIndex, Number(e.target.value)))}
       >
@@ -38,7 +39,7 @@ function CustomCaption(props: {
       </select>
 
       <select
-        className="bg-zinc-800 text-white p-1 rounded border border-zinc-600 w-24"
+        className="w-24 rounded border border-zinc-600 bg-zinc-800 p-1 text-white"
         value={yearIndex}
         onChange={(e) => props.onChangeMonth?.(new Date(Number(e.target.value), monthIndex))}
       >
@@ -89,6 +90,9 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
           head_cell: 'w-10 text-xs text-center text-zinc-400',
           cell: 'w-10 h-10 text-center',
           day: 'h-10 w-10 p-0 text-sm hover:bg-zinc-700 rounded-full',
+          day_button: 'flex items-center justify-center w-full h-full',
+          selected: 'bg-green-500 text-white font-semibold', // 高亮整個圓
+          today: 'border-green-400 text-green-400', // 今天加一圈
           day_selected: 'bg-green-500 text-black rounded-full',
           day_today: 'border border-green-500 text-green-400 rounded-full',
         }}
