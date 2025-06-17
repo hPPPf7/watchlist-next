@@ -545,14 +545,14 @@ export function DetailDialog({
                                 <div className="flex gap-2">
                                   <Button
                                     variant="outline"
-                                    className="h-8 border border-red-500 bg-red-500/10 text-red-400 font-semibold"
+                                    className="h-9 rounded-md border border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20"
                                     onClick={() => 設定編輯模式(true)}
                                   >
                                     ✏️ 編輯紀錄
                                   </Button>
                                   <Button
                                     variant="outline"
-                                    className="h-8 border border-red-500 bg-red-500/10 text-red-400 font-semibold"
+                                    className="h-9 rounded-md border border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20"
                                     onClick={async () => {
                                       if (!film) return;
                                       try {
@@ -606,7 +606,7 @@ export function DetailDialog({
                               <div className="flex flex-wrap items-center justify-center gap-2">
                                 <Button
                                   variant="outline"
-                                  className="h-9 rounded-md border border-blue-400 px-4 text-sm text-blue-400 hover:bg-blue-400/20"
+                                  className="h-9 px-4 text-sm bg-zinc-800 hover:bg-zinc-800"
                                   onClick={() => {
                                     設定觀看日期(new Date());
                                     設定輸入錯誤(false);
@@ -617,7 +617,7 @@ export function DetailDialog({
                                 </Button>
                                 <Button
                                   variant="outline"
-                                  className="h-9 rounded-md border border-pink-500 px-4 text-sm text-pink-500 hover:bg-pink-500/10"
+                                  className="h-9 px-4 text-sm bg-zinc-800 hover:bg-zinc-800"
                                   onClick={() => {
                                     設定觀看日期('forgot');
                                     設定輸入錯誤(false);
@@ -725,7 +725,7 @@ export function DetailDialog({
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="text-zinc-300"
+                                      className="h-9 px-4 text-sm text-zinc-300 hover:bg-zinc-800"
                                       onClick={() => {
                                         設定目前選擇的集數ID((prev) =>
                                           prev === ep.id ? null : ep.id,
