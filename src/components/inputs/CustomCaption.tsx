@@ -9,7 +9,7 @@ import {
 } from 'react-day-picker';
 
 export function CustomCaption({ children, ...divProps }: MonthCaptionProps) {
-  const { previousMonth, nextMonth, labels } = useDayPicker();
+  const { previousMonth, nextMonth, labels, goToMonth } = useDayPicker();
 
   return (
     <div {...divProps} className="flex items-center">
@@ -19,6 +19,7 @@ export function CustomCaption({ children, ...divProps }: MonthCaptionProps) {
         tabIndex={previousMonth ? undefined : -1}
         aria-disabled={previousMonth ? undefined : true}
         aria-label={labels.labelPrevious(previousMonth)}
+        onClick={() => previousMonth && goToMonth(previousMonth)}
       >
         ◀
       </PreviousMonthButton>
@@ -29,6 +30,7 @@ export function CustomCaption({ children, ...divProps }: MonthCaptionProps) {
         tabIndex={nextMonth ? undefined : -1}
         aria-disabled={nextMonth ? undefined : true}
         aria-label={labels.labelNext(nextMonth)}
+        onClick={() => nextMonth && goToMonth(nextMonth)}
       >
         ▶
       </NextMonthButton>
