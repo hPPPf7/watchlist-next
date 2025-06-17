@@ -595,9 +595,12 @@ export function DetailDialog({
                                     }
                                   }}
                                 />
-                                {觀看日期 instanceof Date && (
+                                {觀看日期 !== null && (
                                   <p className="text-sm text-zinc-300">
-                                    目前選擇：{format(觀看日期, 'yyyy-MM-dd')}
+                                    目前選擇：
+                                    {觀看日期 === 'forgot'
+                                      ? '忘記日期'
+                                      : format(觀看日期 as Date, 'yyyy-MM-dd')}
                                   </p>
                                 )}
                                 {輸入錯誤 && <p className="text-sm text-red-400">{錯誤訊息}</p>}
@@ -606,7 +609,7 @@ export function DetailDialog({
                               <div className="flex flex-wrap items-center justify-center gap-2">
                                 <Button
                                   variant="outline"
-                                  className="h-9 px-4 text-sm bg-zinc-800 hover:bg-zinc-800"
+                                  className="h-9 bg-zinc-800 px-4 text-sm hover:bg-zinc-800"
                                   onClick={() => {
                                     設定觀看日期(new Date());
                                     設定輸入錯誤(false);
@@ -617,7 +620,7 @@ export function DetailDialog({
                                 </Button>
                                 <Button
                                   variant="outline"
-                                  className="h-9 px-4 text-sm bg-zinc-800 hover:bg-zinc-800"
+                                  className="h-9 bg-zinc-800 px-4 text-sm hover:bg-zinc-800"
                                   onClick={() => {
                                     設定觀看日期('forgot');
                                     設定輸入錯誤(false);
@@ -630,6 +633,13 @@ export function DetailDialog({
                                   className="h-9 rounded-md bg-green-600 px-4 text-sm text-white hover:bg-green-500"
                                   onClick={async () => {
                                     if (!film) return;
+
+                                    if (觀看日期 === null) {
+                                      設定輸入錯誤(true);
+                                      設定錯誤訊息('請先選擇日期或使用「忘記日期」');
+                                      return;
+                                    }
+
                                     const today = new Date();
                                     today.setHours(0, 0, 0, 0);
 
@@ -642,10 +652,16 @@ export function DetailDialog({
                                       設定錯誤訊息('日期不能晚於今天');
                                       return;
                                     }
+
+                                    // 清除錯誤
+                                    設定輸入錯誤(false);
+                                    設定錯誤訊息('');
+
                                     const formatted =
                                       觀看日期 === 'forgot'
                                         ? 'forgot'
                                         : format(觀看日期 as Date, 'yyyy-MM-dd');
+
                                     try {
                                       await updateMovieWatchDate(film.tmdbId, formatted);
                                       await logWatchedRecord(film.tmdbId, 'movie');
