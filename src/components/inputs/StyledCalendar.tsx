@@ -24,6 +24,7 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
         selected={selected}
         onSelect={onSelect}
         components={{ MonthCaption: CustomCaption }}
+        hideNavigation
         locale={zhTW}
         hidden={{ before: minDate }}
         disabled={{ after: maxDate }}
