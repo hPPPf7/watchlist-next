@@ -1,6 +1,7 @@
 'use client';
 
 import { DayPicker } from 'react-day-picker';
+import { CustomCaption } from './CustomCaption';
 import { zhTW } from 'date-fns/locale';
 import 'react-day-picker/dist/style.css';
 
@@ -22,6 +23,7 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
         mode="single"
         selected={selected}
         onSelect={onSelect}
+        components={{ MonthCaption: CustomCaption }}
         locale={zhTW}
         hidden={{ before: minDate }}
         disabled={{ after: maxDate }}
