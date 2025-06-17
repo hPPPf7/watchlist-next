@@ -141,7 +141,7 @@ export default function MovieTrackerPage() {
           ) : 即將上映.length === 0 ? (
             <EmptyState text="目前沒有即將上映的電影" />
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {即將上映.map(([id, item]) => (
                 <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
                   <p className="text-sm text-gray-500">上映日：{formatDate(item.上映日 || '')}</p>
@@ -164,7 +164,7 @@ export default function MovieTrackerPage() {
           ) : 已上映.length === 0 ? (
             <EmptyState text="目前沒有已上映的電影" />
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {已上映.map(([id, item]) => (
                 <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
                   <p className="text-sm text-gray-500">上映日：{formatDate(item.上映日 || '')}</p>
@@ -177,7 +177,7 @@ export default function MovieTrackerPage() {
           {載入中 ? (
             <EmptyState text="載入中..." loading />
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {Object.entries(清單)
                 .filter(([_, item]) => item.已看紀錄?.movie)
                 .sort((a, b) => {
