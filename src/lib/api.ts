@@ -11,7 +11,13 @@ export async function tmdbFetch<T = any>(path: string): Promise<T> {
   url.searchParams.set('language', 'zh-TW');
   url.searchParams.set('region', 'TW');
 
-  const response = await fetch(url.toString());
+  let response: Response;
+  try {
+    response = await fetch(url.toString());
+  } catch (err) {
+    console.warn('⚠️ 無法取得 TMDb 資料', err);
+    throw err;
+  }
 
   if (response.status === 404) {
     return { results: [] } as T;

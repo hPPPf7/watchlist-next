@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
+import { toast } from 'sonner';
 import { auth, provider } from '@/lib/firebase'; // ✅ 改用已初始化的 auth 與 provider
 
 // --- 型別定義 ---
@@ -37,8 +38,14 @@ export function UserProvider({ children }: UserProviderProps) {
   async function 登入() {
     try {
       await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error('登入失敗', e);
+    } catch (e: any) {
+      if (e?.code === 'auth/popup-closed-by-user') {
+        console.warn('使用者關閉登入視窗');
+        toast.info('已取消登入');
+      } else {
+        console.error('登入失敗', e);
+        toast.error('登入失敗，請稍後再試');
+      }
     }
   }
 
@@ -47,6 +54,7 @@ export function UserProvider({ children }: UserProviderProps) {
       await signOut(auth);
     } catch (e) {
       console.error('登出失敗', e);
+      toast.error('登出失敗，請稍後再試');
     }
   }
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/lib/firebase';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { EmptyState } from '@/components/EmptyState';
@@ -22,15 +23,26 @@ export default function AccountPage() {
     try {
       await signInWithPopup(auth, provider);
       clearTimeout(timeout); // ⬅️ 登入成功清掉 timeout
-    } catch (e) {
+    } catch (e: any) {
       clearTimeout(timeout); // ⬅️ 登入失敗也清掉 timeout
-      console.error('登入失敗', e);
+      if (e?.code === 'auth/popup-closed-by-user') {
+        console.warn('使用者關閉登入視窗');
+        toast.info('已取消登入');
+      } else {
+        console.error('登入失敗', e);
+        toast.error('登入失敗，請稍後再試');
+      }
       setLoading(false);
     }
   };
 
-  const 登出 = () => {
-    signOut(auth);
+  const 登出 = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error('登出失敗', e);
+      toast.error('登出失敗，請稍後再試');
+    }
   };
 
   return (

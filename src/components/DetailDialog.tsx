@@ -459,9 +459,14 @@ export function DetailDialog({
                                   onClick={async () => {
                                     if (!film) return;
                                     設定暫時追蹤狀態('loading');
-                                    await onToggleWatchlist(film);
-                                    設定暫時追蹤狀態(!is追蹤中);
-                                    onUpdated?.();
+                                    try {
+                                      await onToggleWatchlist(film);
+                                      設定暫時追蹤狀態(!is追蹤中);
+                                      onUpdated?.();
+                                    } catch (err) {
+                                      console.error('切換追蹤狀態失敗', err);
+                                      設定暫時追蹤狀態(is追蹤中);
+                                    }
                                   }}
                                 >
                                   {is處理中 ? '處理中...' : is追蹤中 ? '移除清單' : '加入清單'}
@@ -546,13 +551,18 @@ export function DetailDialog({
                                     variant="destructive"
                                     onClick={async () => {
                                       if (!film) return;
-                                      await updateMovieWatchDate(film.tmdbId, null);
-                                      設定觀看日期(null);
-                                      設定已確認(false);
-                                      設定已觀看日期文字(null);
-                                      設定編輯模式(false);
-                                      await onUpdated?.();
-                                      toast.success('🗑️ 已取消觀看紀錄');
+                                      try {
+                                        await updateMovieWatchDate(film.tmdbId, null);
+                                        設定觀看日期(null);
+                                        設定已確認(false);
+                                        設定已觀看日期文字(null);
+                                        設定編輯模式(false);
+                                        await onUpdated?.();
+                                        toast.success('🗑️ 已取消觀看紀錄');
+                                      } catch (err) {
+                                        console.error('取消觀看紀錄失敗', err);
+                                        toast.error('取消失敗');
+                                      }
                                     }}
                                   >
                                     🗑️ 取消紀錄
@@ -628,15 +638,20 @@ export function DetailDialog({
                                       觀看日期 === 'forgot'
                                         ? 'forgot'
                                         : format(觀看日期 as Date, 'yyyy-MM-dd');
-                                    await updateMovieWatchDate(film.tmdbId, formatted);
-                                    await logWatchedRecord(film.tmdbId, 'movie');
-                                    設定已觀看日期文字(
-                                      formatted === 'forgot' ? '忘記日期' : formatted,
-                                    );
-                                    設定已確認(true);
-                                    設定編輯模式(false);
-                                    await onUpdated?.();
-                                    toast.success('✅ 已儲存觀看紀錄');
+                                    try {
+                                      await updateMovieWatchDate(film.tmdbId, formatted);
+                                      await logWatchedRecord(film.tmdbId, 'movie');
+                                      設定已觀看日期文字(
+                                        formatted === 'forgot' ? '忘記日期' : formatted,
+                                      );
+                                      設定已確認(true);
+                                      設定編輯模式(false);
+                                      await onUpdated?.();
+                                      toast.success('✅ 已儲存觀看紀錄');
+                                    } catch (err) {
+                                      console.error('儲存觀看紀錄失敗', err);
+                                      toast.error('儲存失敗');
+                                    }
                                   }}
                                 >
                                   ✅ 確認紀錄
@@ -738,31 +753,29 @@ export function DetailDialog({
                                         onSelect={async (date) => {
                                           if (date) {
                                             const key = `${ep.season_number}-${ep.episode_number}`;
-                                            await updateEpisodeWatchDate(
-                                              film.tmdbId,
-                                              key,
-                                              format(date, 'yyyy-MM-dd'),
-                                            );
-                                            await logWatchedRecord(film.tmdbId, 'tv');
+                                            try {
+                                              await updateEpisodeWatchDate(
+                                                film.tmdbId,
+                                                key,
+                                                format(date, 'yyyy-MM-dd'),
+                                              );
+                                              await logWatchedRecord(film.tmdbId, 'tv');
 
-                                            // ✅ 更新本地 state
-                                            設定集數日期((prev) => ({
-                                              ...prev,
-                                              [key]: date,
-                                            }));
+                                              // ✅ 更新本地 state
+                                              設定集數日期((prev) => ({
+                                                ...prev,
+                                                [key]: date,
+                                              }));
 
-                                            // ✅ 不用 reload 整季資料
-                                            設定目前選擇的集數ID(null);
-                                            await onUpdated?.();
-                                            toast.success(
-                                              `✅ 已儲存：${format(date, 'yyyy/MM/dd')}`,
-                                            );
-
-                                            設定目前選擇的集數ID(null);
-                                            await onUpdated?.();
-                                            toast.success(
-                                              `✅ 已儲存：${format(date, 'yyyy/MM/dd')}`,
-                                            );
+                                              設定目前選擇的集數ID(null);
+                                              await onUpdated?.();
+                                              toast.success(
+                                                `✅ 已儲存：${format(date, 'yyyy/MM/dd')}`,
+                                              );
+                                            } catch (err) {
+                                              console.error('儲存集數日期失敗', err);
+                                              toast.error('儲存失敗');
+                                            }
                                           }
                                         }}
                                       />

@@ -16,7 +16,13 @@ export async function getWatchlist(): Promise<Record<string, any>> {
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
-  const snap = await getDoc(ref);
+  let snap;
+  try {
+    snap = await getDoc(ref);
+  } catch (err) {
+    console.warn('⚠️ 讀取清單失敗', err);
+    throw err;
+  }
   if (!snap.exists()) return {};
 
   const 原始清單 = snap.data()?.追蹤清單 || {};
@@ -42,7 +48,12 @@ export async function getWatchlist(): Promise<Record<string, any>> {
   }
 
   if (有更新) {
-    await setDoc(ref, { 追蹤清單: 更新清單 }, { merge: true });
+    try {
+      await setDoc(ref, { 追蹤清單: 更新清單 }, { merge: true });
+    } catch (err) {
+      console.warn('⚠️ 更新清單資料失敗', err);
+      throw err;
+    }
   }
 
   return 更新清單;
@@ -74,8 +85,13 @@ export async function addToWatchlist(film: Film): Promise<void> {
     詳細,
   };
 
-  await setDoc(ref, { 追蹤清單: watchlist });
-  await logAddToWatchlist(film.tmdbId, film.類型);
+  try {
+    await setDoc(ref, { 追蹤清單: watchlist });
+    await logAddToWatchlist(film.tmdbId, film.類型);
+  } catch (err) {
+    console.warn('⚠️ 新增追蹤失敗', err);
+    throw err;
+  }
 }
 
 export async function removeFromWatchlist(tmdbId: number): Promise<void> {
@@ -83,9 +99,14 @@ export async function removeFromWatchlist(tmdbId: number): Promise<void> {
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
-  await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}`]: deleteField(),
-  });
+  try {
+    await updateDoc(ref, {
+      [`追蹤清單.${tmdbId}`]: deleteField(),
+    });
+  } catch (err) {
+    console.warn('⚠️ 移除追蹤失敗', err);
+    throw err;
+  }
 }
 
 export async function updateWatchlist(newWatchlist: Record<string, any>): Promise<void> {
@@ -93,7 +114,12 @@ export async function updateWatchlist(newWatchlist: Record<string, any>): Promis
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
-  await setDoc(ref, { 追蹤清單: newWatchlist }, { merge: true });
+  try {
+    await setDoc(ref, { 追蹤清單: newWatchlist }, { merge: true });
+  } catch (err) {
+    console.warn('⚠️ 更新追蹤清單失敗', err);
+    throw err;
+  }
 }
 
 export async function updateMovieWatchDate(tmdbId: number, date: string | 'forgot' | null) {
@@ -101,10 +127,15 @@ export async function updateMovieWatchDate(tmdbId: number, date: string | 'forgo
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
-  await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}.已看紀錄.movie`]:
-      date && date !== 'forgot' ? Timestamp.fromDate(new Date(date)) : date,
-  });
+  try {
+    await updateDoc(ref, {
+      [`追蹤清單.${tmdbId}.已看紀錄.movie`]:
+        date && date !== 'forgot' ? Timestamp.fromDate(new Date(date)) : date,
+    });
+  } catch (err) {
+    console.warn('⚠️ 更新電影觀看日期失敗', err);
+    throw err;
+  }
 }
 
 export async function updateEpisodeWatchDate(
@@ -116,9 +147,14 @@ export async function updateEpisodeWatchDate(
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
-  await updateDoc(ref, {
-    [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: date
-      ? Timestamp.fromDate(new Date(date))
-      : null,
-  });
+  try {
+    await updateDoc(ref, {
+      [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: date
+        ? Timestamp.fromDate(new Date(date))
+        : null,
+    });
+  } catch (err) {
+    console.warn('⚠️ 更新影集觀看日期失敗', err);
+    throw err;
+  }
 }
