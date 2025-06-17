@@ -535,20 +535,24 @@ export function DetailDialog({
                         <div className="flex flex-col items-center gap-4">
                           {已確認 && !編輯模式 ? (
                             <>
-                              <div className="flex flex-col items-center gap-2">
-                                <p className="text-lg font-semibold text-zinc-200">
+                              <div className="flex w-full items-center justify-between gap-4 rounded-lg bg-zinc-800 p-4">
+                                <p className="font-semibold text-zinc-200">
                                   🎬 目前紀錄：{' '}
                                   {觀看日期 === 'forgot'
                                     ? '❓ 忘記日期'
                                     : format(觀看日期 as Date, 'yyyy-MM-dd')}
                                 </p>
-                                <div className="flex gap-3">
-                                  <Button size="sm" onClick={() => 設定編輯模式(true)}>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    className="h-8 border border-red-500 bg-red-500/10 text-red-400 font-semibold"
+                                    onClick={() => 設定編輯模式(true)}
+                                  >
                                     ✏️ 編輯紀錄
                                   </Button>
                                   <Button
-                                    size="sm"
-                                    variant="destructive"
+                                    variant="outline"
+                                    className="h-8 border border-red-500 bg-red-500/10 text-red-400 font-semibold"
                                     onClick={async () => {
                                       if (!film) return;
                                       try {
@@ -601,6 +605,8 @@ export function DetailDialog({
 
                               <div className="flex flex-wrap items-center justify-center gap-2">
                                 <Button
+                                  variant="outline"
+                                  className="h-9 rounded-md border border-blue-400 px-4 text-sm text-blue-400 hover:bg-blue-400/20"
                                   onClick={() => {
                                     設定觀看日期(new Date());
                                     設定輸入錯誤(false);
@@ -610,16 +616,18 @@ export function DetailDialog({
                                   📅 今天
                                 </Button>
                                 <Button
+                                  variant="outline"
+                                  className="h-9 rounded-md border border-pink-500 px-4 text-sm text-pink-500 hover:bg-pink-500/10"
                                   onClick={() => {
                                     設定觀看日期('forgot');
                                     設定輸入錯誤(false);
                                     設定錯誤訊息('');
                                   }}
                                 >
-                                  ❓ 忘記日期
+                                  忘記日期
                                 </Button>
                                 <Button
-                                  className="bg-green-600"
+                                  className="h-9 rounded-md bg-green-600 px-4 text-sm text-white hover:bg-green-500"
                                   onClick={async () => {
                                     if (!film) return;
                                     const today = new Date();
@@ -654,10 +662,14 @@ export function DetailDialog({
                                     }
                                   }}
                                 >
-                                  ✅ 確認紀錄
+                                  確認紀錄
                                 </Button>
                                 {已確認 && (
-                                  <Button variant="ghost" onClick={() => 設定編輯模式(false)}>
+                                  <Button
+                                    variant="ghost"
+                                    className="h-9 rounded-md border border-zinc-600 px-4 text-sm text-zinc-400 hover:bg-zinc-800"
+                                    onClick={() => 設定編輯模式(false)}
+                                  >
                                     取消編輯
                                   </Button>
                                 )}
