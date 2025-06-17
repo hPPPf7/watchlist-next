@@ -8,8 +8,11 @@ import {
   type MonthCaptionProps,
 } from 'react-day-picker';
 
-export function CustomCaption({ children, ...divProps }: MonthCaptionProps) {
+export function CustomCaption(props: MonthCaptionProps) {
   const { previousMonth, nextMonth, labels, goToMonth } = useDayPicker();
+  const { children, calendarMonth, displayIndex, ...divProps } = props;
+  void calendarMonth;
+  void displayIndex;
 
   return (
     <div {...divProps} className="flex items-center">
