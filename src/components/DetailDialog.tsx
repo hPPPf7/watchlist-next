@@ -589,7 +589,7 @@ export function DetailDialog({
                                 {輸入錯誤 && <p className="text-sm text-red-400">{錯誤訊息}</p>}
                               </div>
 
-                              <div className="flex gap-2">
+                              <div className="flex flex-wrap items-center justify-center gap-2">
                                 <Button
                                   onClick={() => {
                                     設定觀看日期(new Date());
@@ -608,9 +608,6 @@ export function DetailDialog({
                                 >
                                   ❓ 忘記日期
                                 </Button>
-                              </div>
-
-                              <div className="flex gap-2">
                                 <Button
                                   className="bg-green-600"
                                   onClick={async () => {
