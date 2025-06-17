@@ -23,15 +23,11 @@ export function StyledCalendar({ selected, onSelect }: StyledCalendarProps) {
         selected={selected}
         onSelect={onSelect}
         locale={zhTW}
+        hidden={{ before: minDate }}
         disabled={{ after: maxDate }}
-        hidden={{ before: minDate, after: maxDate }} // ✅ 取代 fromDate/toDate
         classNames={{
-          // ✅ caption 變成上下左右排版
-          caption: 'mb-2 flex items-center justify-between px-2',
-          caption_label: 'text-white font-semibold text-base',
-          // ✅ 箭頭改色（強制套 text / fill）
-          nav_button:
-            'text-white hover:text-green-400 fill-white hover:fill-green-400 transition-colors duration-200',
+          nav_button: 'group text-white hover:text-green-400',
+          chevron: 'w-4 h-4 fill-current transition-colors duration-200',
           table: 'w-full border-collapse table-fixed',
           head_row: 'flex',
           row: 'flex',
