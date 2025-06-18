@@ -742,7 +742,7 @@ export function DetailDialog({
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-9 px-4 text-sm text-zinc-300 hover:bg-zinc-800"
+                                      className="h-9 px-4 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
                                       onClick={() => {
                                         設定目前選擇的集數ID((prev) =>
                                           prev === ep.id ? null : ep.id,
