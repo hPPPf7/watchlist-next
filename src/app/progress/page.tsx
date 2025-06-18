@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useUser } from '@/hooks/useUser';
 import { type Film } from '@/types/Film';
 import { useOpenDetail } from '@/hooks/useOpenDetail';
@@ -33,6 +33,7 @@ export default function SeriesProgressPage() {
     { id: string; item: Film; episodes: EpisodeInfo[] }[]
   >([]);
   const [目前Tab, 設定目前Tab] = useState('progress');
+  const progressRef = useRef<HTMLDivElement | null>(null);
 
   async function 載入清單() {
     設定載入中(true);
@@ -101,7 +102,13 @@ export default function SeriesProgressPage() {
     }
   }, [清單]);
 
-  const { 有新集數未看, 有紀錄中, 尚未看過 } = 分類排序觀看進度(清單);
+  const { 有新集數未看, 有紀錄中, 尚未看過, 已看完 } = 分類排序觀看進度(清單);
+
+  useEffect(() => {
+    if (目前Tab === 'progress' && progressRef.current && !載入中) {
+      progressRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, [目前Tab, 載入中]);
 
   const handleToggleWatchlist = async (film: Film) => {
     if (!film) return;
@@ -216,7 +223,22 @@ export default function SeriesProgressPage() {
           </TabsContent>
 
           <TabsContent value="progress">
-            {[...有新集數未看, ...有紀錄中].map(({ id, item }) => (
+            {已看完.length > 0 && (
+              <>
+                <div className="mb-4 text-center text-base text-gray-400">✅ 已看完的影集</div>
+                <div className="mb-10 space-y-4">
+                  {已看完.map(({ id, item }) => (
+                    <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
+                      <p className="mt-1 text-xs text-gray-400">已看完</p>
+                    </HorizontalFilmCard>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div ref={progressRef} />
+
+            {[...有新集數未看, ...有紀錄中].map(({ id, item, 新集 }) => (
               <HorizontalFilmCard
                 key={id}
                 film={item}
@@ -232,6 +254,9 @@ export default function SeriesProgressPage() {
                       : '已看完';
                   })()}
                 </p>
+                {新集 && (
+                  <span className="ml-2 rounded bg-red-500 px-1 text-xs text-white">NEW</span>
+                )}
               </HorizontalFilmCard>
             ))}
 
