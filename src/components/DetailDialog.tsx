@@ -739,39 +739,67 @@ export function DetailDialog({
                                       {`S${ep.season_number}E${ep.episode_number}`} -{' '}
                                       {ep.name || '未命名集數'}
                                     </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-9 px-4 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                                      onClick={() => {
-                                        設定目前選擇的集數ID((prev) =>
-                                          prev === ep.id ? null : ep.id,
-                                        );
-                                        設定暫存日期(selectedDate);
-
-                                        // ✅ 加這段：展開後自動捲動到該集數最上方
-                                        setTimeout(() => {
-                                          const el = document.querySelector(
-                                            `[data-episode="S${ep.season_number}E${ep.episode_number}"]`,
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-9 px-4 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                                        onClick={() => {
+                                          設定目前選擇的集數ID((prev) =>
+                                            prev === ep.id ? null : ep.id,
                                           );
-                                          if (el) {
-                                            el.scrollIntoView({
-                                              behavior: 'smooth',
-                                              block: 'start',
-                                            });
-                                            // 微調讓日曆完全顯示（上方多 100px 空間）
-                                            setTimeout(() => {
-                                              window.scrollBy({ top: -100, behavior: 'smooth' });
-                                            }, 300);
-                                          }
-                                        }, 50);
-                                      }}
-                                    >
-                                      📅{' '}
-                                      {selectedDate && isValid(selectedDate)
-                                        ? format(selectedDate, 'yyyy/MM/dd')
-                                        : '新增日期'}
-                                    </Button>
+                                          設定暫存日期(selectedDate);
+
+                                          // ✅ 加這段：展開後自動捲動到該集數最上方
+                                          setTimeout(() => {
+                                            const el = document.querySelector(
+                                              `[data-episode="S${ep.season_number}E${ep.episode_number}"]`,
+                                            );
+                                            if (el) {
+                                              el.scrollIntoView({
+                                                behavior: 'smooth',
+                                                block: 'start',
+                                              });
+                                              // 微調讓日曆完全顯示（上方多 100px 空間）
+                                              setTimeout(() => {
+                                                window.scrollBy({ top: -100, behavior: 'smooth' });
+                                              }, 300);
+                                            }
+                                          }, 50);
+                                        }}
+                                      >
+                                        📅{' '}
+                                        {selectedDate && isValid(selectedDate)
+                                          ? format(selectedDate, 'yyyy/MM/dd')
+                                          : '新增日期'}
+                                      </Button>
+                                      {selectedDate && (
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          className="size-7 rounded-full border border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-white transition"
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            const key = `${ep.season_number}-${ep.episode_number}`;
+                                            try {
+                                              await updateEpisodeWatchDate(film.tmdbId, key, null);
+                                              await logWatchedRecord(film.tmdbId, 'tv', 'remove');
+                                              設定集數日期((prev) => ({
+                                                ...prev,
+                                                [key]: null,
+                                              }));
+                                              await onUpdated?.();
+                                              toast.success('🗑️ 已取消紀錄');
+                                            } catch (err) {
+                                              console.error('取消集數紀錄失敗', err);
+                                              toast.error('取消失敗');
+                                            }
+                                          }}
+                                        >
+                                          ❌
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
 
                                   {/* 展開日曆 */}
