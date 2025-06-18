@@ -112,7 +112,8 @@ export default function SeriesProgressPage() {
   useEffect(() => {
     if (目前Tab === 'progress' && progressRef.current && !載入中) {
       const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top - 80, behavior: 'auto' });
+      // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
+      window.scrollTo({ top: top - 190, behavior: 'auto' });
     }
   }, [目前Tab, 載入中]);
 
@@ -145,7 +146,7 @@ export default function SeriesProgressPage() {
   return (
     <div className="mx-auto max-w-4xl p-4">
       <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
-        <div className="sticky top-16 z-20 mb-6 border-b border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
+        <div className="sticky top-20 z-20 mb-6 border-b border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
           <h1 className="py-2 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
           <TabsList className="mt-2 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
             <TabsTrigger
