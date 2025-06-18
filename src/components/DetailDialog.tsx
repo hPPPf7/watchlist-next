@@ -11,6 +11,7 @@ import { Film } from '@/types/Film';
 import { useUser } from '@/hooks/useUser';
 import { DialogDescription } from '@/components/ui/dialog';
 import { format, differenceInCalendarDays, isValid } from 'date-fns';
+import { parseLocalDate } from '@/lib/date';
 import { updateMovieWatchDate, updateEpisodeWatchDate } from '@/lib/watchlist';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -80,7 +81,7 @@ export function DetailDialog({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const releaseDateStr = film?.上映日 || film?.詳細?.release_date;
-  const releaseDate = releaseDateStr ? new Date(releaseDateStr) : null;
+  const releaseDate = releaseDateStr ? parseLocalDate(releaseDateStr) : null;
   const isMovieNotReleased = film?.類型 === 'movie' && releaseDate ? releaseDate > today : false;
 
   function findNextUnwatchedEpisode(

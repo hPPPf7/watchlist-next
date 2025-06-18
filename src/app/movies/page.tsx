@@ -5,7 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/EmptyState';
 import { useUser } from '@/hooks/useUser';
 import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
-import { formatDate, formatCountdown } from '@/lib/date';
+import { formatDate, formatCountdown, parseLocalDate } from '@/lib/date';
 import { type Film } from '@/types/Film';
 import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { useOpenDetail } from '@/hooks/useOpenDetail';
@@ -22,7 +22,7 @@ function 分類電影(清單: 清單資料) {
     // ⛔️ 如果已看過，就不要分類進來
     if (item.已看紀錄?.movie) continue;
 
-    const date = item.上映日 ? new Date(item.上映日) : null;
+    const date = item.上映日 ? parseLocalDate(item.上映日) : null;
     if (!date || isNaN(date.getTime()) || date.getTime() > Date.now()) {
       即將上映.push([id, item]);
     } else {
@@ -31,10 +31,12 @@ function 分類電影(清單: 清單資料) {
   }
 
   即將上映.sort(
-    (a, b) => new Date(a[1].上映日 || '').getTime() - new Date(b[1].上映日 || '').getTime(),
+    (a, b) =>
+      parseLocalDate(a[1].上映日 || '').getTime() - parseLocalDate(b[1].上映日 || '').getTime(),
   );
   已上映.sort(
-    (a, b) => new Date(b[1].上映日 || '').getTime() - new Date(a[1].上映日 || '').getTime(),
+    (a, b) =>
+      parseLocalDate(b[1].上映日 || '').getTime() - parseLocalDate(a[1].上映日 || '').getTime(),
   );
 
   return { 即將上映, 已上映 };
@@ -45,7 +47,7 @@ function itemTime(item: Film) {
 
   if (!raw) return 0;
 
-  if (typeof raw === 'string') return new Date(raw).getTime();
+  if (typeof raw === 'string') return parseLocalDate(raw).getTime();
   if (typeof raw === 'object' && typeof raw.toDate === 'function') return raw.toDate().getTime();
 
   return 0;
