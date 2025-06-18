@@ -5,6 +5,7 @@ import type { Film } from '@/types/Film';
 import { getTMDbDetail } from './api';
 import { logAddToWatchlist } from './popular';
 import { Timestamp } from 'firebase/firestore';
+import { invalidateSeasonCache } from '@/utils/tv';
 
 function getCurrentUser() {
   const auth = getAuth();
@@ -103,6 +104,7 @@ export async function removeFromWatchlist(tmdbId: number): Promise<void> {
     await updateDoc(ref, {
       [`追蹤清單.${tmdbId}`]: deleteField(),
     });
+    invalidateSeasonCache(tmdbId);
   } catch (err) {
     console.warn('⚠️ 移除追蹤失敗', err);
     throw err;
@@ -153,6 +155,7 @@ export async function updateEpisodeWatchDate(
         ? Timestamp.fromDate(new Date(date))
         : null,
     });
+    invalidateSeasonCache(tmdbId);
   } catch (err) {
     console.warn('⚠️ 更新影集觀看日期失敗', err);
     throw err;

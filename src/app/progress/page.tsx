@@ -8,7 +8,7 @@ import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchli
 import { EmptyState } from '@/components/EmptyState';
 import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { 分類排序觀看進度 } from '@/utils/sortLogic';
-import { getNextEpisodeInfo } from '@/utils/tv';
+import { getNextEpisodeInfo, type NextEpisode } from '@/utils/tv';
 
 type WatchlistMap = Record<string, Film>;
 
@@ -17,6 +17,7 @@ export default function SeriesProgressPage() {
   const openDetail = useOpenDetail();
   const [清單, 設定清單] = useState<WatchlistMap>({});
   const [載入中, 設定載入中] = useState(true);
+  const [下一集資訊, 設定下一集資訊] = useState<Record<number, NextEpisode | null>>({});
 
   async function 載入清單() {
     設定載入中(true);
@@ -40,6 +41,23 @@ export default function SeriesProgressPage() {
       載入清單();
     }
   }, [使用者]);
+
+  useEffect(() => {
+    async function loadNext() {
+      const entries = await Promise.all(
+        Object.values(清單).map(async (item) => {
+          const info = await getNextEpisodeInfo(item);
+          return [item.tmdbId, info] as [number, NextEpisode | null];
+        }),
+      );
+      設定下一集資訊(Object.fromEntries(entries));
+    }
+    if (Object.keys(清單).length > 0) {
+      loadNext();
+    } else {
+      設定下一集資訊({});
+    }
+  }, [清單]);
 
   const { 有新集數未看, 有紀錄中, 尚未看過 } = 分類排序觀看進度(清單);
 
@@ -87,7 +105,8 @@ export default function SeriesProgressPage() {
             >
               <p className="mt-1 text-xs text-gray-400">
                 {(() => {
-                  const next = getNextEpisodeInfo(item);
+                  const next = 下一集資訊[item.tmdbId];
+                  if (next === undefined) return '...';
                   return next
                     ? `下一集：S${next.season}E${next.episode}${next.name ? ` - ${next.name}` : ''}`
                     : '已看完';
