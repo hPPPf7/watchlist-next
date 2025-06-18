@@ -144,150 +144,160 @@ export default function SeriesProgressPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-4">
-      <div className="sticky top-16 z-20 mb-6 border-b border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
-        <h1 className="py-2 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
-        <TabsList className="mt-2 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
-          <TabsTrigger
-            value="upcoming"
-            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-          >
-            ⏳ <span className="ml-1">即將播出 ({即將播出集數.length})</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="progress"
-            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-          >
-            📺{' '}
-            <span className="ml-1">
-              進度列表 ({有新集數未看.length + 有紀錄中.length + 尚未看過.length})
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="specials"
-            className="h-10 w-[140px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-          >
-            🎞️ <span className="ml-1">特別篇 ({特別篇清單.length})</span>
-          </TabsTrigger>
-        </TabsList>
-      </div>
+      <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
+        <div className="sticky top-16 z-20 mb-6 border-b border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
+          <h1 className="py-2 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
+          <TabsList className="mt-2 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
+            <TabsTrigger
+              value="upcoming"
+              className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+            >
+              ⏳ <span className="ml-1">即將播出 ({即將播出集數.length})</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="progress"
+              className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+            >
+              📺{' '}
+              <span className="ml-1">
+                進度列表 ({有新集數未看.length + 有紀錄中.length + 尚未看過.length})
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="specials"
+              className="h-10 w-[140px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+            >
+              🎞️ <span className="ml-1">特別篇 ({特別篇清單.length})</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-      {載入中 ? (
-        <EmptyState text="載入中..." loading />
-      ) : 有新集數未看.length + 有紀錄中.length + 尚未看過.length === 0 &&
-        即將播出集數.length === 0 ? (
-        <EmptyState text="目前沒有追蹤的影集" />
-      ) : (
-        <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
-          <TabsContent value="upcoming">
-            {即將播出集數.length === 0 ? (
-              <EmptyState text="目前沒有即將播出的影集" />
-            ) : (
-              <div className="space-y-4">
-                {即將播出集數.map(({ id, item, episode }) => (
-                  <HorizontalFilmCard
-                    key={`${id}-${episode.season}-${episode.episode}`}
-                    film={item}
-                    onClick={() => handleOpenDetail(item)}
-                  >
-                    <p className="text-sm text-gray-500">
-                      下一集：S{episode.season}E{episode.episode}
-                      {episode.name ? ` - ${episode.name}` : ''}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      播出日：{formatDate(episode.air_date || '')}
-                    </p>
-                    {formatCountdown(episode.air_date || '') === '0 天後' ? (
-                      <p className="mt-1 text-base font-bold text-green-400">🎉 今天播出</p>
-                    ) : (
-                      <p className="mt-1 text-base font-bold text-red-400">
-                        {formatCountdown(episode.air_date || '')}
+        {載入中 ? (
+          <EmptyState text="載入中..." loading />
+        ) : 有新集數未看.length + 有紀錄中.length + 尚未看過.length === 0 &&
+          即將播出集數.length === 0 ? (
+          <EmptyState text="目前沒有追蹤的影集" />
+        ) : (
+          <>
+            <TabsContent value="upcoming">
+              {即將播出集數.length === 0 ? (
+                <EmptyState text="目前沒有即將播出的影集" />
+              ) : (
+                <div className="space-y-4">
+                  {即將播出集數.map(({ id, item, episode }) => (
+                    <HorizontalFilmCard
+                      key={`${id}-${episode.season}-${episode.episode}`}
+                      film={item}
+                      onClick={() => handleOpenDetail(item)}
+                    >
+                      <p className="text-sm text-gray-500">
+                        下一集：S{episode.season}E{episode.episode}
+                        {episode.name ? ` - ${episode.name}` : ''}
                       </p>
-                    )}
-                  </HorizontalFilmCard>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="specials">
-            {特別篇清單.length === 0 ? (
-              <EmptyState text="目前沒有未看特別篇" />
-            ) : (
-              <div className="space-y-6">
-                {特別篇清單.map(({ id, item, episodes }) => (
-                  <HorizontalFilmCard
-                    key={id}
-                    film={item}
-                    onClick={() => handleOpenDetail(item, 0)}
-                  >
-                    <p className="mt-1 text-xs text-gray-400">
-                      尚有 {episodes.length} 集特別篇未看
-                    </p>
-                  </HorizontalFilmCard>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="progress">
-            {已看完.length > 0 && (
-              <>
-                <div className="mb-4 text-center text-base text-gray-400">✅ 已看完的影集</div>
-                <div className="mb-10 space-y-4">
-                  {已看完.map(({ id, item }) => (
-                    <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
-                      <p className="mt-1 text-xs text-gray-400">已看完</p>
+                      <p className="text-sm text-gray-500">
+                        播出日：{formatDate(episode.air_date || '')}
+                      </p>
+                      {formatCountdown(episode.air_date || '') === '0 天後' ? (
+                        <p className="mt-1 text-base font-bold text-green-400">🎉 今天播出</p>
+                      ) : (
+                        <p className="mt-1 text-base font-bold text-red-400">
+                          {formatCountdown(episode.air_date || '')}
+                        </p>
+                      )}
                     </HorizontalFilmCard>
                   ))}
                 </div>
-              </>
-            )}
+              )}
+            </TabsContent>
 
-            {[...有新集數未看, ...有紀錄中].length > 0 && (
-              <div className="mb-4 text-center text-base text-gray-400" ref={progressRef}>
-                👇 正在觀看的影集
-              </div>
-            )}
-
-            {[...有新集數未看, ...有紀錄中].map(({ id, item, 新集 }) => (
-              <HorizontalFilmCard
-                key={id}
-                film={item}
-                onClick={() => handleOpenDetail(item)}
-                className="mb-6"
-              >
-                <p className="mt-1 text-xs text-gray-400">
-                  {(() => {
-                    const next = 下一集資訊[item.tmdbId];
-                    if (next === undefined) return '...';
-                    return next
-                      ? `下一集：S${next.season}E${next.episode}${next.name ? ` - ${next.name}` : ''}`
-                      : '已看完';
-                  })()}
-                </p>
-                {新集 && (
-                  <span className="ml-2 rounded bg-red-500 px-1 text-xs text-white">NEW</span>
-                )}
-              </HorizontalFilmCard>
-            ))}
-
-            {尚未看過.length > 0 && (
-              <>
-                <div className="mt-10 text-center text-base text-gray-400">
-                  👇 尚未開始觀看的影集
-                </div>
-                <div className="mt-4 space-y-4">
-                  {尚未看過.map(({ id, item }) => (
-                    <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
-                      <p className="mt-1 text-xs text-gray-400">尚未觀看任何集數</p>
+            <TabsContent value="specials">
+              {特別篇清單.length === 0 ? (
+                <EmptyState text="目前沒有未看特別篇" />
+              ) : (
+                <div className="space-y-6">
+                  {特別篇清單.map(({ id, item, episodes }) => (
+                    <HorizontalFilmCard
+                      key={id}
+                      film={item}
+                      onClick={() => handleOpenDetail(item, 0)}
+                    >
+                      <p className="mt-1 text-xs text-gray-400">
+                        尚有 {episodes.length} 集特別篇未看
+                      </p>
                     </HorizontalFilmCard>
                   ))}
                 </div>
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-      )}
+              )}
+            </TabsContent>
+
+            <TabsContent value="progress">
+              {已看完.length > 0 && (
+                <>
+                  <div className="mb-4 text-center text-base text-gray-400">✅ 已看完的影集</div>
+                  <div className="mb-10 space-y-4">
+                    {已看完.map(({ id, item }) => (
+                      <HorizontalFilmCard
+                        key={id}
+                        film={item}
+                        onClick={() => handleOpenDetail(item)}
+                      >
+                        <p className="mt-1 text-xs text-gray-400">已看完</p>
+                      </HorizontalFilmCard>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {[...有新集數未看, ...有紀錄中].length > 0 && (
+                <div className="mb-4 text-center text-base text-gray-400" ref={progressRef}>
+                  👇 正在觀看的影集
+                </div>
+              )}
+
+              {[...有新集數未看, ...有紀錄中].map(({ id, item, 新集 }) => (
+                <HorizontalFilmCard
+                  key={id}
+                  film={item}
+                  onClick={() => handleOpenDetail(item)}
+                  className="mb-6"
+                >
+                  <p className="mt-1 text-xs text-gray-400">
+                    {(() => {
+                      const next = 下一集資訊[item.tmdbId];
+                      if (next === undefined) return '...';
+                      return next
+                        ? `下一集：S${next.season}E${next.episode}${next.name ? ` - ${next.name}` : ''}`
+                        : '已看完';
+                    })()}
+                  </p>
+                  {新集 && (
+                    <span className="ml-2 rounded bg-red-500 px-1 text-xs text-white">NEW</span>
+                  )}
+                </HorizontalFilmCard>
+              ))}
+
+              {尚未看過.length > 0 && (
+                <>
+                  <div className="mt-10 text-center text-base text-gray-400">
+                    👇 尚未開始觀看的影集
+                  </div>
+                  <div className="mt-4 space-y-4">
+                    {尚未看過.map(({ id, item }) => (
+                      <HorizontalFilmCard
+                        key={id}
+                        film={item}
+                        onClick={() => handleOpenDetail(item)}
+                      >
+                        <p className="mt-1 text-xs text-gray-400">尚未觀看任何集數</p>
+                      </HorizontalFilmCard>
+                    ))}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
     </div>
   );
 }

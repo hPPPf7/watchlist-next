@@ -39,8 +39,8 @@ export async function getWatchlist(): Promise<Record<string, any>> {
         更新清單[id] = {
           ...item,
           上映日: 詳細.release_date || 詳細.first_air_date || '',
-          季數: 詳細.number_of_seasons,
-          集數: item.集數 ?? 詳細.number_of_episodes,
+          季數: 詳細.number_of_seasons ?? item.季數 ?? null,
+          集數: item.集數 ?? 詳細.number_of_episodes ?? null,
           詳細,
         };
         有更新 = true;
@@ -50,7 +50,7 @@ export async function getWatchlist(): Promise<Record<string, any>> {
     } else if (item.類型 === 'tv' && item.集數 == null) {
       更新清單[id] = {
         ...item,
-        集數: item.詳細?.number_of_episodes,
+        集數: item.詳細?.number_of_episodes ?? null,
       };
       有更新 = true;
     }
@@ -91,8 +91,8 @@ export async function addToWatchlist(film: Film): Promise<void> {
     背景圖: film.背景圖 || '',
     加入時間: new Date().toISOString(),
     上映日: 詳細.release_date || 詳細.first_air_date || '',
-    季數: 詳細.number_of_seasons,
-    集數: 詳細.number_of_episodes,
+    季數: 詳細.number_of_seasons ?? null,
+    集數: 詳細.number_of_episodes ?? null,
     詳細,
   };
 
