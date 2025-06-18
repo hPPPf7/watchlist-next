@@ -10,7 +10,9 @@ export function 分類排序觀看進度(清單: 清單資料) {
   const 尚未看過: { id: string; item: Film }[] = [];
 
   for (const [id, item] of Object.entries(清單)) {
-    const 已看集 = Object.keys(item.已看紀錄?.episodes ?? {});
+    const 已看集 = Object.entries(item.已看紀錄?.episodes ?? {})
+      .filter(([, v]) => !!v)
+      .map(([k]) => k);
     const 最後觀看時間 = item.最後觀看時間 ? new Date(item.最後觀看時間).getTime() : 0;
 
     if (已看集.length > 0 && item.集數 && item.季數) {
@@ -30,7 +32,7 @@ export function 分類排序觀看進度(清單: 清單資料) {
 
 export function 排序依上映日(清單: 清單資料) {
   return Object.entries(清單)
-    .filter(([_, item]) => item.上映日)
+    .filter(([, item]) => item.上映日)
     .sort((a, b) => new Date(a[1].上映日 ?? 0).getTime() - new Date(b[1].上映日 ?? 0).getTime());
 }
 

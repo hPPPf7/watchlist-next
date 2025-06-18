@@ -11,7 +11,11 @@ export function getNextEpisodeInfo(item: Film): NextEpisode | null {
     .filter((s: any) => s.season_number > 0)
     .sort((a: any, b: any) => a.season_number - b.season_number);
 
-  const watched = new Set(Object.keys(item.已看紀錄?.episodes || {}));
+  const watched = new Set(
+    Object.entries(item.已看紀錄?.episodes || {})
+      .filter(([, v]) => !!v)
+      .map(([k]) => k),
+  );
 
   for (const season of seasons) {
     const seasonNum = season.season_number;

@@ -101,7 +101,7 @@ export function DetailDialog({
     season: number;
     episode: number;
   } | null {
-    const entries = Object.entries(episodes || {}).filter(([_, v]) => !!v);
+    const entries = Object.entries(episodes || {}).filter(([, v]) => !!v);
     if (entries.length === 0) return null;
 
     entries.sort((a, b) => {
@@ -276,6 +276,7 @@ export function DetailDialog({
 
       for (const key in record) {
         const value = record[key];
+        if (!value) continue;
         let date: Date | null = null;
 
         if (value instanceof Date && isValid(value)) {
@@ -288,7 +289,9 @@ export function DetailDialog({
           date = isValid(d) ? d : null;
         }
 
-        parsed[key] = date;
+        if (date) {
+          parsed[key] = date;
+        }
       }
 
       設定集數日期(parsed);
@@ -412,9 +415,7 @@ export function DetailDialog({
                                         film.詳細?.watchRecord?.episodes ??
                                         film.詳細?.已看紀錄?.episodes ??
                                         {};
-                                      const entries = Object.entries(record).filter(
-                                        ([_, v]) => !!v,
-                                      );
+                                      const entries = Object.entries(record).filter(([, v]) => !!v);
 
                                       const latestKey = entries.sort((a, b) => {
                                         const [aSeason, aEp] = a[0].split('-').map(Number);
@@ -438,7 +439,7 @@ export function DetailDialog({
                                           film.詳細?.已看紀錄?.episodes ??
                                           {};
                                         const entries = Object.entries(record).filter(
-                                          ([_, v]) => !!v,
+                                          ([, v]) => !!v,
                                         );
                                         const totalWatched = entries.length;
                                         const totalEpisodes = 詳細資料?.number_of_episodes ?? '?';
@@ -777,7 +778,7 @@ export function DetailDialog({
                                         <Button
                                           variant="outline"
                                           size="icon"
-                                          className="size-7 rounded-full border border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-white transition"
+                                          className="size-7 rounded-full border border-red-500 bg-red-500/10 text-red-400 transition hover:bg-red-500/20 hover:text-white"
                                           onClick={async (e) => {
                                             e.stopPropagation();
                                             const key = `${ep.season_number}-${ep.episode_number}`;
