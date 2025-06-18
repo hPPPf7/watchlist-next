@@ -35,6 +35,7 @@ export default function SeriesProgressPage() {
   >([]);
   const [目前Tab, 設定目前Tab] = useState('progress');
   const progressRef = useRef<HTMLDivElement | null>(null);
+  const previousTab = useRef(目前Tab);
 
   async function 載入清單() {
     設定載入中(true);
@@ -110,11 +111,24 @@ export default function SeriesProgressPage() {
   const { 有新集數未看, 有紀錄中, 尚未看過, 已看完 } = 分類排序觀看進度(清單);
 
   useEffect(() => {
-    if (目前Tab === 'progress' && progressRef.current && !載入中) {
-      const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
-      // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
-      window.scrollTo({ top: top - 190, behavior: 'auto' });
+    if (載入中) return;
+
+    if (目前Tab === 'progress') {
+      if (progressRef.current) {
+        const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
+        // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
+        window.scrollTo({ top: top - 190, behavior: 'auto' });
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'auto' });
     }
+  }, [目前Tab, 載入中, 有新集數未看.length, 有紀錄中.length]);
+
+  useEffect(() => {
+    if (!載入中 && previousTab.current === 'progress' && 目前Tab !== 'progress') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    previousTab.current = 目前Tab;
   }, [目前Tab, 載入中]);
 
   const handleToggleWatchlist = async (film: Film) => {
