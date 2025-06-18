@@ -691,6 +691,9 @@ export function DetailDialog({
                                           : format(觀看日期 as Date, 'yyyy-MM-dd');
 
                                       try {
+                                        if (!is追蹤中 && onToggleWatchlist) {
+                                          await onToggleWatchlist(film);
+                                        }
                                         await updateMovieWatchDate(film.tmdbId, formatted);
                                         await logWatchedRecord(film.tmdbId, 'movie');
                                         設定已觀看日期文字(
@@ -847,6 +850,9 @@ export function DetailDialog({
                                           if (date) {
                                             const key = `${ep.season_number}-${ep.episode_number}`;
                                             try {
+                                              if (!is追蹤中 && onToggleWatchlist) {
+                                                await onToggleWatchlist(film);
+                                              }
                                               await updateEpisodeWatchDate(
                                                 film.tmdbId,
                                                 key,

@@ -106,7 +106,8 @@ export default function SeriesProgressPage() {
 
   useEffect(() => {
     if (目前Tab === 'progress' && progressRef.current && !載入中) {
-      progressRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+      const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: top - 80, behavior: 'auto' });
     }
   }, [目前Tab, 載入中]);
 
@@ -138,7 +139,9 @@ export default function SeriesProgressPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-4">
-      <h1 className="mb-4 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
+      <h1 className="sticky top-16 z-20 mb-4 bg-zinc-900 pb-2 text-2xl font-bold text-white">
+        🎯 觀看進度畫面
+      </h1>
 
       {載入中 ? (
         <EmptyState text="載入中..." loading />
@@ -147,7 +150,7 @@ export default function SeriesProgressPage() {
         <EmptyState text="目前沒有追蹤的影集" />
       ) : (
         <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
-          <TabsList className="mb-6 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
+          <TabsList className="sticky top-[5.5rem] z-10 mb-6 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
             <TabsTrigger
               value="upcoming"
               className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
@@ -236,7 +239,11 @@ export default function SeriesProgressPage() {
               </>
             )}
 
-            <div ref={progressRef} />
+            {[...有新集數未看, ...有紀錄中].length > 0 && (
+              <div className="mb-4 text-center text-base text-gray-400" ref={progressRef}>
+                👇 正在觀看的影集
+              </div>
+            )}
 
             {[...有新集數未看, ...有紀錄中].map(({ id, item, 新集 }) => (
               <HorizontalFilmCard

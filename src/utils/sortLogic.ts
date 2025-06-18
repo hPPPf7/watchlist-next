@@ -11,6 +11,25 @@ export interface WatchItem {
   新集?: boolean;
 }
 
+function getAiredEpisodes(detail: any): number {
+  if (!detail) return 0;
+  if (!detail.last_episode_to_air) {
+    return detail.number_of_episodes ?? 0;
+  }
+  const last = detail.last_episode_to_air;
+  const seasons = detail.seasons || [];
+  let count = 0;
+  for (const s of seasons) {
+    if (s.season_number <= 0) continue;
+    if (s.season_number < last.season_number) {
+      count += s.episode_count || 0;
+    } else if (s.season_number === last.season_number) {
+      count += last.episode_number;
+    }
+  }
+  return count;
+}
+
 export function 分類排序觀看進度(清單: 清單資料) {
   const 有新集數未看: WatchItem[] = [];
   const 有紀錄中: WatchItem[] = [];
@@ -28,16 +47,17 @@ export function 分類排序觀看進度(清單: 清單資料) {
       continue;
     }
 
-    const 總集數 = item.詳細?.number_of_episodes ?? item.集數 ?? 0;
-    const 有新集 =
-      item.詳細?.number_of_episodes && item.集數 && item.詳細.number_of_episodes > item.集數;
+    const 已播集數 = getAiredEpisodes(item.詳細);
 
-    if (總集數 > 0 && 已看集.length >= 總集數 && !有新集) {
+    if (已看集.length >= 已播集數) {
       已看完.push({ id, item, 最後觀看時間 });
-    } else if (有新集) {
-      有新集數未看.push({ id, item, 最後觀看時間, 新集: true });
-    } else if (已看集.length > 0) {
-      有紀錄中.push({ id, item, 最後觀看時間 });
+    } else {
+      const 新集 = 已播集數 > 已看集.length;
+      if (新集) {
+        有新集數未看.push({ id, item, 最後觀看時間, 新集: true });
+      } else {
+        有紀錄中.push({ id, item, 最後觀看時間 });
+      }
     }
   }
 
