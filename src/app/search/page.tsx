@@ -27,6 +27,7 @@ export default function SearchPage() {
   const [關鍵字, 設定關鍵字] = useState('');
   const [結果列表, 設定結果列表] = useState<Film[]>([]);
   const [追蹤狀態, 設定追蹤狀態] = useState<Record<number, boolean | 'loading'>>({});
+  const [watchlistMap, setWatchlistMap] = useState<Record<string, Film>>({});
   const [篩選類型, 設定篩選類型] = useState<'all' | 'movie' | 'tv'>('all');
   const [搜尋中, 設定搜尋中] = useState(false);
   const [錯誤訊息, 設定錯誤訊息] = useState('');
@@ -99,6 +100,7 @@ export default function SearchPage() {
     try {
       const list = await getWatchlist();
       設定追蹤狀態(Object.fromEntries(Object.keys(list).map((id) => [Number(id), true])));
+      setWatchlistMap(list);
     } catch (error) {
       console.warn('讀取清單失敗', error);
     }
@@ -266,14 +268,15 @@ export default function SearchPage() {
   const handleOpenDetail = useCallback(
     (film: Film) => {
       logClick(film.tmdbId, film.類型);
+      const merged = watchlistMap[film.tmdbId] ? { ...film, ...watchlistMap[film.tmdbId] } : film;
       openDetail({
-        film,
+        film: merged,
         from: 'search',
         onToggleWatchlist: handleToggleWatchlist,
         追蹤狀態,
       });
     },
-    [openDetail, handleToggleWatchlist, 追蹤狀態],
+    [openDetail, handleToggleWatchlist, 追蹤狀態, watchlistMap],
   );
 
   return (

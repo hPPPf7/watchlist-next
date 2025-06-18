@@ -557,6 +557,7 @@ export function DetailDialog({
                                       if (!film) return;
                                       try {
                                         await updateMovieWatchDate(film.tmdbId, null);
+                                        await logWatchedRecord(film.tmdbId, 'movie', 'remove');
                                         設定觀看日期(null);
                                         設定已確認(false);
                                         設定已觀看日期文字(null);

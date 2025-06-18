@@ -8,6 +8,7 @@ import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchli
 import { EmptyState } from '@/components/EmptyState';
 import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { 分類排序觀看進度 } from '@/utils/sortLogic';
+import { getNextEpisodeInfo } from '@/utils/tv';
 
 type WatchlistMap = Record<string, Film>;
 
@@ -85,7 +86,12 @@ export default function SeriesProgressPage() {
               className="mb-6"
             >
               <p className="mt-1 text-xs text-gray-400">
-                已看集數：{Object.keys(item.已看紀錄?.episodes ?? {}).length}
+                {(() => {
+                  const next = getNextEpisodeInfo(item);
+                  return next
+                    ? `下一集：S${next.season}E${next.episode}${next.name ? ` - ${next.name}` : ''}`
+                    : '已看完';
+                })()}
               </p>
             </HorizontalFilmCard>
           ))}

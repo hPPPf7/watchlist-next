@@ -1,7 +1,8 @@
 // src/lib/popular.ts
 
 import { db } from '@/lib/firebase';
-import { doc, setDoc, updateDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 /** 🔹 工具函式：取得今天字串 key（如 2025-06-16） */
 function getTodayKey() {
@@ -10,22 +11,19 @@ function getTodayKey() {
 
 export async function logClick(tmdbId: number, type: 'movie' | 'tv') {
   try {
-    const ref = doc(db, 'popularClickLogs', String(tmdbId));
+    const user = getAuth().currentUser;
     const today = getTodayKey();
+    const ref = doc(db, 'popularClickLogs', String(tmdbId));
+    const recordRef = doc(ref, 'records', `${user?.uid || 'anon'}_${today}`);
+
+    const recordSnap = await getDoc(recordRef);
     const snap = await getDoc(ref);
 
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        countsByDay: { [today]: 1 },
-        type,
-      });
-    } else {
-      const data = snap.data();
-      const current = data.countsByDay?.[today] || 0;
-      await updateDoc(ref, {
-        [`countsByDay.${today}`]: current + 1,
-        type,
-      });
+    if (!recordSnap.exists()) {
+      await setDoc(recordRef, { ts: Date.now() });
+
+      const current = snap.exists() ? snap.data().countsByDay?.[today] || 0 : 0;
+      await setDoc(ref, { countsByDay: { [today]: current + 1 }, type }, { merge: true });
     }
   } catch (err) {
     console.warn('⚠️ logClick 失敗', err);
@@ -34,46 +32,54 @@ export async function logClick(tmdbId: number, type: 'movie' | 'tv') {
 
 export async function logAddToWatchlist(tmdbId: number, type: 'movie' | 'tv') {
   try {
-    const ref = doc(db, 'popularWatchLogs', String(tmdbId));
-    const today = getTodayKey();
-    const snap = await getDoc(ref);
+    const user = getAuth().currentUser;
+    if (!user) return;
 
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        countsByDay: { [today]: 1 },
-        type,
-      });
-    } else {
-      const data = snap.data();
-      const current = data.countsByDay?.[today] || 0;
-      await updateDoc(ref, {
-        [`countsByDay.${today}`]: current + 1,
-        type,
-      });
+    const ref = doc(db, 'popularWatchLogs', String(tmdbId));
+    const userRef = doc(ref, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, { ts: Date.now() });
+
+      const today = getTodayKey();
+      const snap = await getDoc(ref);
+      const current = snap.exists() ? snap.data().countsByDay?.[today] || 0 : 0;
+
+      await setDoc(ref, { countsByDay: { [today]: current + 1 }, type }, { merge: true });
     }
   } catch (err) {
     console.warn('⚠️ logAddToWatchlist 失敗', err);
   }
 }
 
-export async function logWatchedRecord(tmdbId: number, type: 'movie' | 'tv') {
+export async function logWatchedRecord(
+  tmdbId: number,
+  type: 'movie' | 'tv',
+  action: 'add' | 'remove' = 'add',
+) {
   try {
-    const ref = doc(db, 'popularWatchedLogs', String(tmdbId));
+    const user = getAuth().currentUser;
     const today = getTodayKey();
-    const snap = await getDoc(ref);
+    const ref = doc(db, 'popularWatchedLogs', String(tmdbId));
+    const recordRef = doc(ref, 'records', `${user?.uid || 'anon'}_${today}`);
 
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        countsByDay: { [today]: 1 },
-        type,
-      });
+    const recordSnap = await getDoc(recordRef);
+    const snap = await getDoc(ref);
+    const current = snap.exists() ? snap.data().countsByDay?.[today] || 0 : 0;
+
+    if (action === 'add') {
+      if (recordSnap.exists()) return;
+      await setDoc(recordRef, { ts: Date.now() });
+      await setDoc(ref, { countsByDay: { [today]: current + 1 }, type }, { merge: true });
     } else {
-      const data = snap.data();
-      const current = data.countsByDay?.[today] || 0;
-      await updateDoc(ref, {
-        [`countsByDay.${today}`]: current + 1,
-        type,
-      });
+      if (!recordSnap.exists()) return;
+      await deleteDoc(recordRef);
+      await setDoc(
+        ref,
+        { countsByDay: { [today]: Math.max(current - 1, 0) }, type },
+        { merge: true },
+      );
     }
   } catch (err) {
     console.warn('⚠️ logWatchedRecord 失敗', err);
