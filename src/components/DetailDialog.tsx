@@ -176,7 +176,8 @@ export function DetailDialog({
       (async () => {
         try {
           const 資料 = await getTMDbDetail('tv', film.tmdbId);
-          const seasons = (資料.seasons || []).filter((s: any) => s.season_number > 0);
+          const seasons = (資料.seasons || []).filter((s: any) => s.season_number >= 0);
+          const regularSeasons = seasons.filter((s: any) => s.season_number > 0);
           設定季資料(seasons);
           const record =
             film.已看紀錄?.episodes ??
@@ -193,7 +194,7 @@ export function DetailDialog({
           let 要載入的季 = next?.season;
           if (要載入的季 == null) {
             const lastWatched = findLastWatchedEpisode(record);
-            要載入的季 = lastWatched?.season ?? seasons[0]?.season_number;
+            要載入的季 = lastWatched?.season ?? regularSeasons[0]?.season_number;
           }
 
           if (要載入的季 != null) {
@@ -453,7 +454,13 @@ export function DetailDialog({
                                           ([, v]) => !!v,
                                         );
                                         const totalWatched = entries.length;
-                                        const totalEpisodes = 詳細資料?.number_of_episodes ?? '?';
+                                        const totalEpisodes =
+                                          (詳細資料?.seasons || [])
+                                            .filter((s: any) => s.season_number > 0)
+                                            .reduce(
+                                              (sum: number, s: any) => sum + (s.episode_count || 0),
+                                              0,
+                                            ) || '?';
                                         return `${totalWatched} / ${totalEpisodes} 集`;
                                       })()}
                                     </div>
