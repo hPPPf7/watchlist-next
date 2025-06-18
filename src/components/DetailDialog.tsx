@@ -28,6 +28,7 @@ interface DetailDialogProps {
   onToggleWatchlist?: (film: Film) => Promise<void>;
   onUpdated?: () => void;
   追蹤狀態?: Record<number, boolean | 'loading'>;
+  initialSeason?: number;
 }
 
 export function DetailDialog({
@@ -38,6 +39,7 @@ export function DetailDialog({
   onToggleWatchlist,
   onUpdated,
   追蹤狀態,
+  initialSeason,
 }: DetailDialogProps) {
   const { 使用者 } = useUser();
   const [詳細資料, 設定詳細資料] = useState<Record<string, any> | null>(() => {
@@ -50,7 +52,7 @@ export function DetailDialog({
   const [activeTab, setActiveTab] = useState('info');
   const [季資料, 設定季資料] = useState<any[]>([]);
   const [集數資料, 設定集數資料] = useState<any[]>([]);
-  const [選擇的季, 設定選擇的季] = useState<number>(1);
+  const [選擇的季, 設定選擇的季] = useState<number>(initialSeason ?? 1);
   const [暫時追蹤狀態, 設定暫時追蹤狀態] = useState<boolean | 'loading' | null>(null);
   const is追蹤中 =
     暫時追蹤狀態 === 'loading'
@@ -170,7 +172,7 @@ export function DetailDialog({
         })();
       }
     }
-  }, [open, film]);
+  }, [open, film, initialSeason]);
 
   useEffect(() => {
     if (open && film?.類型 === 'tv') {
@@ -192,7 +194,7 @@ export function DetailDialog({
             已看紀錄: { episodes: record },
           } as Film);
 
-          let 要載入的季 = next?.season;
+          let 要載入的季 = initialSeason ?? next?.season;
           if (要載入的季 == null) {
             const lastWatched = findLastWatchedEpisode(record);
             要載入的季 = lastWatched?.season ?? regularSeasons[0]?.season_number;
@@ -202,7 +204,7 @@ export function DetailDialog({
             設定選擇的季(要載入的季);
             await 載入集數(film.tmdbId, 要載入的季);
 
-            if (next && next.season === 要載入的季) {
+            if (initialSeason == null && next && next.season === 要載入的季) {
               設定要自動捲動的集數(next);
             } else {
               const seasonInfo = seasons.find(

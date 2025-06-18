@@ -18,12 +18,14 @@ export function useOpenDetail() {
     onToggleWatchlist,
     追蹤狀態,
     onUpdated,
+    season,
   }: {
     film: Film;
     from: 'search' | 'progress' | 'movies';
     onToggleWatchlist: (film: Film) => Promise<void>;
     追蹤狀態: Record<number, boolean | 'loading'>;
     onUpdated?: () => void;
+    season?: number;
   }) => {
     if (isMobileDevice()) {
       router.push(`/media/${film.tmdbId}`);
@@ -34,6 +36,7 @@ export function useOpenDetail() {
         onToggleWatchlist,
         追蹤狀態,
         onUpdated,
+        season,
       });
     }
   };

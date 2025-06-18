@@ -118,13 +118,14 @@ export default function SeriesProgressPage() {
     }
   };
 
-  const handleOpenDetail = (item: Film) => {
+  const handleOpenDetail = (item: Film, season?: number) => {
     openDetail({
       film: { ...item, 類型: 'tv' },
       from: 'progress',
       onToggleWatchlist: handleToggleWatchlist,
       追蹤狀態: Object.fromEntries(Object.keys(清單).map((id) => [Number(id), true])),
       onUpdated: 載入清單,
+      season,
     });
   };
 
@@ -200,7 +201,11 @@ export default function SeriesProgressPage() {
             ) : (
               <div className="space-y-6">
                 {特別篇清單.map(({ id, item, episodes }) => (
-                  <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
+                  <HorizontalFilmCard
+                    key={id}
+                    film={item}
+                    onClick={() => handleOpenDetail(item, 0)}
+                  >
                     <p className="mt-1 text-xs text-gray-400">
                       尚有 {episodes.length} 集特別篇未看
                     </p>

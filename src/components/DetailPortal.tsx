@@ -13,12 +13,14 @@ interface DetailContextType {
     onToggleWatchlist: (film: Film) => Promise<void>;
     追蹤狀態: Record<number, boolean | 'loading'>;
     onUpdated?: () => void;
+    season?: number;
   }) => void;
   closeDetail: () => void;
   from: 'search' | 'progress' | 'movies';
 
   onToggleWatchlist: (film: Film) => Promise<void>;
   追蹤狀態: Record<number, boolean | 'loading'>;
+  season?: number;
 }
 
 const DetailContext = createContext<DetailContextType | null>(null);
@@ -41,6 +43,7 @@ export function DetailPortalProvider({ children }: { children: React.ReactNode }
   const [追蹤狀態, 設定追蹤狀態] = useState<Record<number, boolean | 'loading'>>({});
   const [onUpdated, setOnUpdated] = useState<(() => void) | undefined>(undefined);
   const [dialogKey, setDialogKey] = useState<number>(0);
+  const [season, setSeason] = useState<number | undefined>(undefined);
 
   useLayoutEffect(() => {
     setMounted(true);
@@ -52,18 +55,21 @@ export function DetailPortalProvider({ children }: { children: React.ReactNode }
     onToggleWatchlist,
     追蹤狀態,
     onUpdated,
+    season,
   }: {
     film: Film;
     from: 'search' | 'progress' | 'movies';
     onToggleWatchlist: (film: Film) => Promise<void>;
     追蹤狀態: Record<number, boolean | 'loading'>;
     onUpdated?: () => void;
+    season?: number;
   }) => {
     setFilm(film);
     setFrom(from);
     setOnToggleWatchlist(() => onToggleWatchlist);
     setOnUpdated(() => onUpdated);
     設定追蹤狀態(追蹤狀態);
+    setSeason(season);
     setDialogKey(Date.now()); // ✅ 每次打開更新 key
   };
 
@@ -73,7 +79,7 @@ export function DetailPortalProvider({ children }: { children: React.ReactNode }
 
   return (
     <DetailContext.Provider
-      value={{ film, openDetail, closeDetail, from, onToggleWatchlist, 追蹤狀態 }}
+      value={{ film, openDetail, closeDetail, from, onToggleWatchlist, 追蹤狀態, season }}
     >
       {children}
 
@@ -91,6 +97,7 @@ export function DetailPortalProvider({ children }: { children: React.ReactNode }
             onToggleWatchlist={onToggleWatchlist}
             追蹤狀態={追蹤狀態}
             onUpdated={onUpdated}
+            initialSeason={season}
           />,
           document.body,
         )}
