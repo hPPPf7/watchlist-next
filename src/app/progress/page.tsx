@@ -10,7 +10,13 @@ import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 分類排序觀看進度 } from '@/utils/sortLogic';
 import { formatCountdown, formatDate } from '@/lib/date';
-import { getNextEpisodeInfo, type NextEpisode } from '@/utils/tv';
+import {
+  getNextEpisodeInfo,
+  type NextEpisode,
+  getUpcomingEpisodes,
+  type EpisodeInfo,
+  getUnwatchedSpecialEpisodes,
+} from '@/utils/tv';
 
 type WatchlistMap = Record<string, Film>;
 
@@ -20,6 +26,12 @@ export default function SeriesProgressPage() {
   const [清單, 設定清單] = useState<WatchlistMap>({});
   const [載入中, 設定載入中] = useState(true);
   const [下一集資訊, 設定下一集資訊] = useState<Record<number, NextEpisode | null>>({});
+  const [即將播出集數, 設定即將播出集數] = useState<
+    { id: string; item: Film; episode: EpisodeInfo }[]
+  >([]);
+  const [特別篇清單, 設定特別篇清單] = useState<
+    { id: string; item: Film; episodes: EpisodeInfo[] }[]
+  >([]);
   const [目前Tab, 設定目前Tab] = useState('progress');
 
   async function 載入清單() {
@@ -46,36 +58,50 @@ export default function SeriesProgressPage() {
   }, [使用者]);
 
   useEffect(() => {
-    async function loadNext() {
+    async function loadData() {
       const entries = await Promise.all(
         Object.values(清單).map(async (item) => {
           const info = await getNextEpisodeInfo(item);
-          return [item.tmdbId, info] as [number, NextEpisode | null];
+          return { id: item.tmdbId.toString(), item, info };
         }),
       );
-      設定下一集資訊(Object.fromEntries(entries));
+      const nextMap: Record<number, NextEpisode | null> = {};
+      const upcomingList: { id: string; item: Film; episode: EpisodeInfo }[] = [];
+      const specialList: { id: string; item: Film; episodes: EpisodeInfo[] }[] = [];
+
+      for (const entry of entries) {
+        nextMap[Number(entry.id)] = entry.info;
+
+        const upcoming = await getUpcomingEpisodes(entry.item);
+        upcoming.forEach((ep) => {
+          upcomingList.push({ id: entry.id, item: entry.item, episode: ep });
+        });
+
+        const specials = await getUnwatchedSpecialEpisodes(entry.item);
+        if (specials.length > 0 && !entry.info) {
+          specialList.push({ id: entry.id, item: entry.item, episodes: specials });
+        }
+      }
+
+      upcomingList.sort(
+        (a, b) =>
+          new Date(a.episode.air_date || 0).getTime() - new Date(b.episode.air_date || 0).getTime(),
+      );
+
+      設定下一集資訊(nextMap);
+      設定即將播出集數(upcomingList);
+      設定特別篇清單(specialList);
     }
     if (Object.keys(清單).length > 0) {
-      loadNext();
+      loadData();
     } else {
       設定下一集資訊({});
+      設定即將播出集數([]);
+      設定特別篇清單([]);
     }
   }, [清單]);
 
   const { 有新集數未看, 有紀錄中, 尚未看過 } = 分類排序觀看進度(清單);
-  const 即將播出 = Object.entries(清單)
-    .filter(([, item]) => {
-      const next = item.詳細?.next_episode_to_air;
-      if (!next || !next.air_date) return false;
-      const d = new Date(next.air_date);
-      return !isNaN(d.getTime()) && d.getTime() > Date.now();
-    })
-    .map(([id, item]) => ({ id, item }))
-    .sort((a, b) => {
-      const da = new Date(a.item.詳細!.next_episode_to_air!.air_date).getTime();
-      const db = new Date(b.item.詳細!.next_episode_to_air!.air_date).getTime();
-      return da - db;
-    });
 
   const handleToggleWatchlist = async (film: Film) => {
     if (!film) return;
@@ -108,7 +134,8 @@ export default function SeriesProgressPage() {
 
       {載入中 ? (
         <EmptyState text="載入中..." loading />
-      ) : 有新集數未看.length + 有紀錄中.length + 尚未看過.length === 0 && 即將播出.length === 0 ? (
+      ) : 有新集數未看.length + 有紀錄中.length + 尚未看過.length === 0 &&
+        即將播出集數.length === 0 ? (
         <EmptyState text="目前沒有追蹤的影集" />
       ) : (
         <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
@@ -117,7 +144,7 @@ export default function SeriesProgressPage() {
               value="upcoming"
               className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
             >
-              ⏳ <span className="ml-1">即將播出 ({即將播出.length})</span>
+              ⏳ <span className="ml-1">即將播出 ({即將播出集數.length})</span>
             </TabsTrigger>
             <TabsTrigger
               value="progress"
@@ -128,32 +155,57 @@ export default function SeriesProgressPage() {
                 進度列表 ({有新集數未看.length + 有紀錄中.length + 尚未看過.length})
               </span>
             </TabsTrigger>
+            <TabsTrigger
+              value="specials"
+              className="h-10 w-[140px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+            >
+              🎞️ <span className="ml-1">特別篇 ({特別篇清單.length})</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming">
-            {即將播出.length === 0 ? (
+            {即將播出集數.length === 0 ? (
               <EmptyState text="目前沒有即將播出的影集" />
             ) : (
               <div className="space-y-4">
-                {即將播出.map(({ id, item }) => {
-                  const next = item.詳細!.next_episode_to_air!;
-                  return (
-                    <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
-                      <p className="text-sm text-gray-500">
-                        下一集：S{next.season_number}E{next.episode_number}
-                        {next.name ? ` - ${next.name}` : ''}
+                {即將播出集數.map(({ id, item, episode }) => (
+                  <HorizontalFilmCard
+                    key={`${id}-${episode.season}-${episode.episode}`}
+                    film={item}
+                    onClick={() => handleOpenDetail(item)}
+                  >
+                    <p className="text-sm text-gray-500">
+                      下一集：S{episode.season}E{episode.episode}
+                      {episode.name ? ` - ${episode.name}` : ''}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      播出日：{formatDate(episode.air_date || '')}
+                    </p>
+                    {formatCountdown(episode.air_date || '') === '0 天後' ? (
+                      <p className="mt-1 text-base font-bold text-green-400">🎉 今天播出</p>
+                    ) : (
+                      <p className="mt-1 text-base font-bold text-red-400">
+                        {formatCountdown(episode.air_date || '')}
                       </p>
-                      <p className="text-sm text-gray-500">播出日：{formatDate(next.air_date)}</p>
-                      {formatCountdown(next.air_date) === '0 天後' ? (
-                        <p className="mt-1 text-base font-bold text-green-400">🎉 今天播出</p>
-                      ) : (
-                        <p className="mt-1 text-base font-bold text-red-400">
-                          {formatCountdown(next.air_date)}
-                        </p>
-                      )}
-                    </HorizontalFilmCard>
-                  );
-                })}
+                    )}
+                  </HorizontalFilmCard>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="specials">
+            {特別篇清單.length === 0 ? (
+              <EmptyState text="目前沒有未看特別篇" />
+            ) : (
+              <div className="space-y-6">
+                {特別篇清單.map(({ id, item, episodes }) => (
+                  <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
+                    <p className="mt-1 text-xs text-gray-400">
+                      尚有 {episodes.length} 集特別篇未看
+                    </p>
+                  </HorizontalFilmCard>
+                ))}
               </div>
             )}
           </TabsContent>
