@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StyledCalendar } from '@/components/inputs/StyledCalendar';
 import { logWatchedRecord } from '@/lib/popular';
+import { getNextEpisodeInfo } from '@/utils/tv';
 import { useRef } from 'react';
 
 interface DetailDialogProps {
@@ -175,28 +176,34 @@ export function DetailDialog({
       (async () => {
         try {
           const 資料 = await getTMDbDetail('tv', film.tmdbId);
-          設定季資料(資料.seasons || []);
-          const firstSeason =
-            資料.seasons?.find((s: any) => s.season_number === 1) || 資料.seasons?.[0];
+          const seasons = (資料.seasons || []).filter((s: any) => s.season_number > 0);
+          設定季資料(seasons);
           const record =
             film.已看紀錄?.episodes ??
             film.詳細?.watchRecord?.episodes ??
             film.詳細?.已看紀錄?.episodes ??
             {};
 
-          const lastWatched = findLastWatchedEpisode(record); // 👈 你等等會加這個函式
+          const next = await getNextEpisodeInfo({
+            ...film,
+            詳細: 資料,
+            已看紀錄: { episodes: record },
+          } as Film);
 
-          const 要載入的季 = lastWatched?.season ?? firstSeason?.season_number;
+          let 要載入的季 = next?.season;
+          if (要載入的季 == null) {
+            const lastWatched = findLastWatchedEpisode(record);
+            要載入的季 = lastWatched?.season ?? seasons[0]?.season_number;
+          }
 
           if (要載入的季 != null) {
             設定選擇的季(要載入的季);
             await 載入集數(film.tmdbId, 要載入的季);
 
-            if (要載入的季 != null) {
-              設定選擇的季(要載入的季);
-              await 載入集數(film.tmdbId, 要載入的季);
-
-              const seasonInfo = 資料.seasons?.find(
+            if (next && next.season === 要載入的季) {
+              設定要自動捲動的集數(next);
+            } else {
+              const seasonInfo = seasons.find(
                 (s: { season_number: number; episode_count?: number }) =>
                   s.season_number === 要載入的季,
               );
@@ -210,7 +217,6 @@ export function DetailDialog({
                   : [];
 
               const nextEpisode = findNextUnwatchedEpisode(record, seasonEpisodes);
-
               if (nextEpisode) {
                 設定要自動捲動的集數(nextEpisode);
               }
