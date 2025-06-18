@@ -17,6 +17,7 @@ import {
   type EpisodeInfo,
   getUnwatchedSpecialEpisodes,
 } from '@/utils/tv';
+import { getTMDbDetail } from '@/lib/api';
 
 type WatchlistMap = Record<string, Film>;
 
@@ -41,10 +42,14 @@ export default function SeriesProgressPage() {
       const data = await getWatchlist();
       console.log('載入影集清單完成，共', Object.keys(data).length, '筆');
 
-      const 影集Only = Object.fromEntries(
-        Object.entries(data).filter(([, item]: any) => item.類型 === 'tv'),
+      const tvEntries = Object.entries(data).filter(([, item]: any) => item.類型 === 'tv');
+      const withDetail = await Promise.all(
+        tvEntries.map(async ([id, item]: [string, any]) => {
+          const detail = await getTMDbDetail('tv', item.tmdbId);
+          return [id, { ...item, 詳細: detail }] as [string, Film];
+        }),
       );
-      設定清單(影集Only);
+      設定清單(Object.fromEntries(withDetail));
     } catch (e) {
       console.error('讀取清單失敗', e);
     } finally {
@@ -139,9 +144,32 @@ export default function SeriesProgressPage() {
 
   return (
     <div className="mx-auto max-w-4xl p-4">
-      <h1 className="sticky top-16 z-20 mb-4 bg-zinc-900 pb-2 text-2xl font-bold text-white">
-        🎯 觀看進度畫面
-      </h1>
+      <div className="sticky top-16 z-20 mb-6 border-b border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
+        <h1 className="py-2 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
+        <TabsList className="mt-2 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
+          <TabsTrigger
+            value="upcoming"
+            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+          >
+            ⏳ <span className="ml-1">即將播出 ({即將播出集數.length})</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="progress"
+            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+          >
+            📺{' '}
+            <span className="ml-1">
+              進度列表 ({有新集數未看.length + 有紀錄中.length + 尚未看過.length})
+            </span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="specials"
+            className="h-10 w-[140px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+          >
+            🎞️ <span className="ml-1">特別篇 ({特別篇清單.length})</span>
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
       {載入中 ? (
         <EmptyState text="載入中..." loading />
@@ -150,30 +178,6 @@ export default function SeriesProgressPage() {
         <EmptyState text="目前沒有追蹤的影集" />
       ) : (
         <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
-          <TabsList className="sticky top-[5.5rem] z-10 mb-6 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
-            <TabsTrigger
-              value="upcoming"
-              className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-            >
-              ⏳ <span className="ml-1">即將播出 ({即將播出集數.length})</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="progress"
-              className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-            >
-              📺{' '}
-              <span className="ml-1">
-                進度列表 ({有新集數未看.length + 有紀錄中.length + 尚未看過.length})
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="specials"
-              className="h-10 w-[140px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-            >
-              🎞️ <span className="ml-1">特別篇 ({特別篇清單.length})</span>
-            </TabsTrigger>
-          </TabsList>
-
           <TabsContent value="upcoming">
             {即將播出集數.length === 0 ? (
               <EmptyState text="目前沒有即將播出的影集" />

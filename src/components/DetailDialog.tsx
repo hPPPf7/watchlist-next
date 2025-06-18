@@ -12,13 +12,32 @@ import { useUser } from '@/hooks/useUser';
 import { DialogDescription } from '@/components/ui/dialog';
 import { format, differenceInCalendarDays, isValid } from 'date-fns';
 import { parseLocalDate } from '@/lib/date';
-import { updateMovieWatchDate, updateEpisodeWatchDate } from '@/lib/watchlist';
+import { updateMovieWatchDate, updateEpisodeWatchDate, updateEpisodeCount } from '@/lib/watchlist';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { StyledCalendar } from '@/components/inputs/StyledCalendar';
 import { logWatchedRecord } from '@/lib/popular';
 import { getNextEpisodeInfo } from '@/utils/tv';
 import { useRef } from 'react';
+
+function getAiredEpisodes(detail: any): number {
+  if (!detail) return 0;
+  if (!detail.last_episode_to_air) {
+    return detail.number_of_episodes ?? 0;
+  }
+  const last = detail.last_episode_to_air;
+  const seasons = detail.seasons || [];
+  let count = 0;
+  for (const s of seasons) {
+    if (s.season_number <= 0) continue;
+    if (s.season_number < last.season_number) {
+      count += s.episode_count || 0;
+    } else if (s.season_number === last.season_number) {
+      count += last.episode_number;
+    }
+  }
+  return count;
+}
 
 interface DetailDialogProps {
   film: Film | null;
@@ -425,11 +444,7 @@ export function DetailDialog({
                                     className="cursor-default border border-green-500 bg-transparent text-green-500"
                                   >
                                     {(() => {
-                                      const record =
-                                        film.已看紀錄?.episodes ??
-                                        film.詳細?.watchRecord?.episodes ??
-                                        film.詳細?.已看紀錄?.episodes ??
-                                        {};
+                                      const record = 集數日期;
                                       const entries = Object.entries(record).filter(([, v]) => !!v);
 
                                       const latestKey = entries.sort((a, b) => {
@@ -448,11 +463,7 @@ export function DetailDialog({
                                   {film.類型 === 'tv' && (
                                     <div className="text-right text-xs text-zinc-400">
                                       {(() => {
-                                        const record =
-                                          film.已看紀錄?.episodes ??
-                                          film.詳細?.watchRecord?.episodes ??
-                                          film.詳細?.已看紀錄?.episodes ??
-                                          {};
+                                        const record = 集數日期;
                                         const entries = Object.entries(record).filter(
                                           ([, v]) => !!v,
                                         );
@@ -865,6 +876,21 @@ export function DetailDialog({
                                                 ...prev,
                                                 [key]: date,
                                               }));
+
+                                              const newRecords = {
+                                                ...集數日期,
+                                                [key]: date,
+                                              };
+                                              const watchedCount =
+                                                Object.values(newRecords).filter(Boolean).length;
+                                              const aired = getAiredEpisodes(詳細資料);
+                                              if (watchedCount >= aired) {
+                                                try {
+                                                  await updateEpisodeCount(film.tmdbId, aired);
+                                                } catch (err) {
+                                                  console.warn('⚠️ 更新集數失敗', err);
+                                                }
+                                              }
 
                                               設定目前選擇的集數ID(null);
                                               await onUpdated?.();

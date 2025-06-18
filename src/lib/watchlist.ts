@@ -35,16 +35,24 @@ export async function getWatchlist(): Promise<Record<string, any>> {
 
     if (!item?.詳細?.release_date && !item?.詳細?.first_air_date) {
       try {
-        const 詳細 = await getTMDbDetail(item.類型!, item.tmdbId!); // 加上非 null 斷言
+        const 詳細 = await getTMDbDetail(item.類型!, item.tmdbId!);
         更新清單[id] = {
           ...item,
           上映日: 詳細.release_date || 詳細.first_air_date || '',
+          季數: 詳細.number_of_seasons,
+          集數: item.集數 ?? 詳細.number_of_episodes,
           詳細,
         };
         有更新 = true;
       } catch (err) {
         console.warn(`⚠️ 無法補上 ${item.title} 詳細資料`, err);
       }
+    } else if (item.類型 === 'tv' && item.集數 == null) {
+      更新清單[id] = {
+        ...item,
+        集數: item.詳細?.number_of_episodes,
+      };
+      有更新 = true;
     }
   }
 
@@ -83,6 +91,8 @@ export async function addToWatchlist(film: Film): Promise<void> {
     背景圖: film.背景圖 || '',
     加入時間: new Date().toISOString(),
     上映日: 詳細.release_date || 詳細.first_air_date || '',
+    季數: 詳細.number_of_seasons,
+    集數: 詳細.number_of_episodes,
     詳細,
   };
 
@@ -158,6 +168,21 @@ export async function updateEpisodeWatchDate(
     invalidateSeasonCache(tmdbId);
   } catch (err) {
     console.warn('⚠️ 更新影集觀看日期失敗', err);
+    throw err;
+  }
+}
+
+export async function updateEpisodeCount(tmdbId: number, count: number) {
+  const 使用者 = getCurrentUser();
+  if (!使用者) throw new Error('未登入');
+
+  const ref = doc(db, 'users', 使用者.uid);
+  try {
+    await updateDoc(ref, {
+      [`追蹤清單.${tmdbId}.集數`]: count,
+    });
+  } catch (err) {
+    console.warn('⚠️ 更新集數失敗', err);
     throw err;
   }
 }

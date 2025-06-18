@@ -52,7 +52,8 @@ export function 分類排序觀看進度(清單: 清單資料) {
     if (已看集.length >= 已播集數) {
       已看完.push({ id, item, 最後觀看時間 });
     } else {
-      const 新集 = 已播集數 > 已看集.length;
+      const 曾經看完 = item.集數 != null && 已看集.length >= item.集數;
+      const 新集 = 曾經看完 && 已播集數 > item.集數!;
       if (新集) {
         有新集數未看.push({ id, item, 最後觀看時間, 新集: true });
       } else {
