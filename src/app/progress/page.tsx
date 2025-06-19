@@ -35,7 +35,6 @@ export default function SeriesProgressPage() {
   >([]);
   const [目前Tab, 設定目前Tab] = useState('progress');
   const progressRef = useRef<HTMLDivElement | null>(null);
-  const previousTab = useRef<string>('');
 
   async function 載入清單() {
     設定載入中(true);
@@ -113,18 +112,18 @@ export default function SeriesProgressPage() {
   useEffect(() => {
     if (載入中) return;
 
-    if (目前Tab === 'progress' && previousTab.current !== 'progress') {
-      if (progressRef.current) {
-        const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
-        // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
-        window.scrollTo({ top: top - 190, behavior: 'auto' });
-      }
-    }
-    if (目前Tab !== 'progress' && previousTab.current === 'progress') {
+    if (目前Tab === 'progress') {
+      // 延後捲動，避免 Radix Tabs 變更焦點導致捲動位置被覆蓋
+      setTimeout(() => {
+        if (progressRef.current) {
+          const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
+          // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
+          window.scrollTo({ top: top - 190, behavior: 'auto' });
+        }
+      }, 0);
+    } else {
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
-
-    previousTab.current = 目前Tab;
   }, [目前Tab, 載入中]);
 
   const handleToggleWatchlist = async (film: Film) => {
