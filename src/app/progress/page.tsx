@@ -35,6 +35,7 @@ export default function SeriesProgressPage() {
   >([]);
   const [目前Tab, 設定目前Tab] = useState('progress');
   const progressRef = useRef<HTMLDivElement | null>(null);
+  const stickyRef = useRef<HTMLDivElement | null>(null);
   const previousTabRef = useRef('');
   const hasScrolledRef = useRef(false);
 
@@ -119,8 +120,11 @@ export default function SeriesProgressPage() {
       setTimeout(() => {
         if (progressRef.current) {
           const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
+          const navHeight =
+            (document.querySelector('nav') as HTMLElement | null)?.offsetHeight || 0;
+          const stickyHeight = stickyRef.current?.offsetHeight || 0;
           // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
-          window.scrollTo({ top: top - 190, behavior: 'auto' });
+          window.scrollTo({ top: top - navHeight - stickyHeight, behavior: 'auto' });
           hasScrolledRef.current = true;
         }
       }, 0);
@@ -160,31 +164,36 @@ export default function SeriesProgressPage() {
   return (
     <div className="mx-auto max-w-4xl p-4">
       <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
-        <div className="sticky top-20 z-20 mb-6 border-b border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
-          <h1 className="py-2 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
-          <TabsList className="mt-2 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
-            <TabsTrigger
-              value="upcoming"
-              className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-            >
-              ⏳ <span className="ml-1">即將播出 ({即將播出集數.length})</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="progress"
-              className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-            >
-              📺{' '}
-              <span className="ml-1">
-                進度列表 ({有新集數未看.length + 有紀錄中.length + 尚未看過.length})
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="specials"
-              className="h-10 w-[140px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-            >
-              🎞️ <span className="ml-1">特別篇 ({特別篇清單.length})</span>
-            </TabsTrigger>
-          </TabsList>
+        <div
+          ref={stickyRef}
+          className="sticky top-16 z-20 mb-6 border-b border-zinc-700 bg-zinc-900 shadow-md backdrop-blur-md"
+        >
+          <div className="px-4 py-3">
+            <h1 className="mb-3 text-2xl font-bold text-white">🎯 觀看進度畫面</h1>
+            <TabsList className="inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
+              <TabsTrigger
+                value="upcoming"
+                className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+              >
+                ⏳ <span className="ml-1">即將播出 ({即將播出集數.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="progress"
+                className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+              >
+                📺{' '}
+                <span className="ml-1">
+                  進度列表 ({有新集數未看.length + 有紀錄中.length + 尚未看過.length})
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="specials"
+                className="h-10 w-[140px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+              >
+                🎞️ <span className="ml-1">特別篇 ({特別篇清單.length})</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         {載入中 ? (
