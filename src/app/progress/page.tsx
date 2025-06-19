@@ -35,6 +35,8 @@ export default function SeriesProgressPage() {
   >([]);
   const [目前Tab, 設定目前Tab] = useState('progress');
   const progressRef = useRef<HTMLDivElement | null>(null);
+  const previousTabRef = useRef('');
+  const hasScrolledRef = useRef(false);
 
   async function 載入清單() {
     設定載入中(true);
@@ -110,20 +112,23 @@ export default function SeriesProgressPage() {
   const { 有新集數未看, 有紀錄中, 尚未看過, 已看完 } = 分類排序觀看進度(清單);
 
   useEffect(() => {
-    if (載入中) return;
+    const prevTab = previousTabRef.current;
 
-    if (目前Tab === 'progress') {
+    if (!載入中 && 目前Tab === 'progress' && (!hasScrolledRef.current || prevTab !== 'progress')) {
       // 延後捲動，避免 Radix Tabs 變更焦點導致捲動位置被覆蓋
       setTimeout(() => {
         if (progressRef.current) {
           const top = progressRef.current.getBoundingClientRect().top + window.scrollY;
           // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
           window.scrollTo({ top: top - 190, behavior: 'auto' });
+          hasScrolledRef.current = true;
         }
       }, 0);
-    } else {
+    } else if (目前Tab !== 'progress') {
       window.scrollTo({ top: 0, behavior: 'auto' });
+      hasScrolledRef.current = false;
     }
+    previousTabRef.current = 目前Tab;
   }, [目前Tab, 載入中]);
 
   const handleToggleWatchlist = async (film: Film) => {
