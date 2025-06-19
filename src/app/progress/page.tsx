@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useUser } from '@/hooks/useUser';
 import { type Film } from '@/types/Film';
 import { useOpenDetail } from '@/hooks/useOpenDetail';
-import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
+import { getWatchlistRaw, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
 import { EmptyState } from '@/components/EmptyState';
 import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -38,21 +38,15 @@ export default function SeriesProgressPage() {
   const stickyRef = useRef<HTMLDivElement | null>(null);
   const previousTabRef = useRef('');
   const hasScrolledRef = useRef(false);
+  const listKeys = Object.keys(清單).join(',');
 
   async function 載入清單() {
     設定載入中(true);
     try {
-      const data = await getWatchlist();
+      const data = await getWatchlistRaw();
       console.log('載入影集清單完成，共', Object.keys(data).length, '筆');
-
       const tvEntries = Object.entries(data).filter(([, item]: any) => item.類型 === 'tv');
-      const withDetail = await Promise.all(
-        tvEntries.map(async ([id, item]: [string, any]) => {
-          const detail = await getTMDbDetail('tv', item.tmdbId);
-          return [id, { ...item, 詳細: detail }] as [string, Film];
-        }),
-      );
-      設定清單(Object.fromEntries(withDetail));
+      設定清單(Object.fromEntries(tvEntries));
     } catch (e) {
       console.error('讀取清單失敗', e);
     } finally {
@@ -65,6 +59,42 @@ export default function SeriesProgressPage() {
       載入清單();
     }
   }, [使用者]);
+
+  useEffect(() => {
+    if (載入中) return;
+    const entries = Object.entries(清單).filter(([, item]) => !item.詳細);
+    if (entries.length === 0) return;
+
+    let cancelled = false;
+    const CONCURRENCY = 5;
+
+    const load = async (index: number) => {
+      const batch = entries.slice(index, index + CONCURRENCY);
+      await Promise.all(
+        batch.map(async ([id, item]) => {
+          try {
+            const detail = await getTMDbDetail('tv', item.tmdbId);
+            if (!cancelled) {
+              設定清單((prev) => ({
+                ...prev,
+                [id]: { ...prev[id], 詳細: detail },
+              }));
+            }
+          } catch (err) {
+            console.warn('⚠️ 載入影集詳細資料失敗', err);
+          }
+        }),
+      );
+      if (!cancelled && index + CONCURRENCY < entries.length) {
+        load(index + CONCURRENCY);
+      }
+    };
+
+    load(0);
+    return () => {
+      cancelled = true;
+    };
+  }, [listKeys, 載入中]);
 
   useEffect(() => {
     async function loadData() {

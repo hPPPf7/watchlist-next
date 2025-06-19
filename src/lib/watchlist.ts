@@ -12,6 +12,24 @@ function getCurrentUser() {
   return auth.currentUser;
 }
 
+export async function getWatchlistRaw(): Promise<Record<string, any>> {
+  const 使用者 = getCurrentUser();
+  if (!使用者) throw new Error('未登入');
+
+  const ref = doc(db, 'users', 使用者.uid);
+  let snap;
+  try {
+    snap = await getDoc(ref);
+  } catch (err) {
+    console.warn('⚠️ 讀取清單失敗', err);
+    throw err;
+  }
+
+  if (!snap.exists()) return {};
+
+  return snap.data()?.追蹤清單 || {};
+}
+
 export async function getWatchlist(): Promise<Record<string, any>> {
   const 使用者 = getCurrentUser();
   if (!使用者) throw new Error('未登入');

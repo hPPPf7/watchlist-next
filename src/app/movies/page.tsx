@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/EmptyState';
 import { useUser } from '@/hooks/useUser';
-import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
+import { getWatchlistRaw, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
 import { formatDate, formatCountdown, parseLocalDate } from '@/lib/date';
 import { type Film } from '@/types/Film';
 import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { useOpenDetail } from '@/hooks/useOpenDetail';
+import { getTMDbDetail } from '@/lib/api';
 
 type 清單資料 = Record<string, Film>;
 
@@ -59,11 +60,12 @@ export default function MovieTrackerPage() {
   const [載入中, 設定載入中] = useState(true);
   const openDetail = useOpenDetail();
   const [目前Tab, 設定目前Tab] = useState('watchlist');
+  const listKeys = Object.keys(清單).join(',');
 
   async function 載入清單() {
     設定載入中(true);
     try {
-      const data = await getWatchlist();
+      const data = await getWatchlistRaw();
       console.log('載入電影清單完成，共', Object.keys(data).length, '筆');
       設定清單(data);
     } catch (e) {
@@ -79,11 +81,47 @@ export default function MovieTrackerPage() {
   }, [使用者]);
 
   useEffect(() => {
+    if (載入中) return;
+    const entries = Object.entries(清單).filter(([, item]) => !item.詳細);
+    if (entries.length === 0) return;
+
+    let cancelled = false;
+    const CONCURRENCY = 5;
+
+    const load = async (index: number) => {
+      const batch = entries.slice(index, index + CONCURRENCY);
+      await Promise.all(
+        batch.map(async ([id, item]) => {
+          try {
+            const detail = await getTMDbDetail('movie', item.tmdbId);
+            if (!cancelled) {
+              設定清單((prev) => ({
+                ...prev,
+                [id]: { ...prev[id], 詳細: detail },
+              }));
+            }
+          } catch (err) {
+            console.warn('⚠️ 載入電影詳細資料失敗', err);
+          }
+        }),
+      );
+      if (!cancelled && index + CONCURRENCY < entries.length) {
+        load(index + CONCURRENCY);
+      }
+    };
+
+    load(0);
+    return () => {
+      cancelled = true;
+    };
+  }, [listKeys, 載入中]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [目前Tab]);
 
   const { 即將上映, 已上映 } = 分類電影(清單);
-  const 已看 = Object.entries(清單).filter(([_, item]) => item.已看紀錄?.movie);
+  const 已看 = Object.entries(清單).filter((entry) => entry[1].已看紀錄?.movie);
 
   const handleToggleWatchlist = async (film: Film) => {
     const is追蹤中 = !!清單[film.tmdbId.toString()];
@@ -181,7 +219,7 @@ export default function MovieTrackerPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {Object.entries(清單)
-                .filter(([_, item]) => item.已看紀錄?.movie)
+                .filter((entry) => entry[1].已看紀錄?.movie)
                 .sort((a, b) => {
                   const aTime = itemTime(a[1]);
                   const bTime = itemTime(b[1]);
