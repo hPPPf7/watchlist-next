@@ -150,30 +150,33 @@ export default function MovieTrackerPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-4">
-      <h1 className="mb-4 text-2xl font-bold">🎬 想看電影清單</h1>
-
+    <div className="mx-auto max-w-4xl px-4 pb-4">
       <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
-        <TabsList className="mb-6 inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
-          <TabsTrigger
-            value="countdown"
-            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-          >
-            ⏳ <span className="ml-1">即將上映 ({即將上映.length})</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="watchlist"
-            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-          >
-            📌 <span className="ml-1">電影清單 ({已上映.length})</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="watched"
-            className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
-          >
-            ✅ <span className="ml-1">已看清單 ({已看.length})</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="sticky top-16 z-20 mb-6 border-b border-zinc-700 bg-zinc-900 shadow-md backdrop-blur-md">
+          <div className="px-4 py-3">
+            <h1 className="mb-3 text-2xl font-bold text-white">🎬 想看電影清單</h1>
+            <TabsList className="inline-flex overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
+              <TabsTrigger
+                value="countdown"
+                className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+              >
+                ⏳ <span className="ml-1">即將上映 ({即將上映.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="watchlist"
+                className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+              >
+                📌 <span className="ml-1">電影清單 ({已上映.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="watched"
+                className="h-10 w-[120px] text-sm text-zinc-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+              >
+                ✅ <span className="ml-1">已看清單 ({已看.length})</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
 
         <TabsContent value="countdown">
           {載入中 ? (
