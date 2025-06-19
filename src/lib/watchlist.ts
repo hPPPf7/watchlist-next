@@ -30,7 +30,7 @@ export async function getWatchlist(): Promise<Record<string, any>> {
   const 更新清單: Record<string, any> = { ...原始清單 };
   let 有更新 = false;
 
-  for (const [id, rawItem] of Object.entries(原始清單)) {
+  const tasks = Object.entries(原始清單).map(async ([id, rawItem]) => {
     const item = rawItem as Partial<Film>; // ✅ 加這行
 
     if (!item?.詳細?.release_date && !item?.詳細?.first_air_date) {
@@ -54,7 +54,9 @@ export async function getWatchlist(): Promise<Record<string, any>> {
       };
       有更新 = true;
     }
-  }
+  });
+
+  await Promise.all(tasks);
 
   if (有更新) {
     try {
