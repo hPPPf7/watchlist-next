@@ -124,7 +124,7 @@ export default function SeriesProgressPage() {
             (document.querySelector('nav') as HTMLElement | null)?.offsetHeight || 0;
           const stickyHeight = stickyRef.current?.offsetHeight || 0;
           // 將卷動位置往上多移動一些，避免被導覽列與上方 Tabs 擋住
-          window.scrollTo({ top: top - navHeight - stickyHeight, behavior: 'auto' });
+          window.scrollTo({ top: top - navHeight - stickyHeight - 12, behavior: 'auto' });
           hasScrolledRef.current = true;
         }
       }, 0);
@@ -162,7 +162,7 @@ export default function SeriesProgressPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-4">
+    <div className="mx-auto max-w-4xl px-4 pb-4">
       <Tabs value={目前Tab} onValueChange={設定目前Tab} className="w-full">
         <div
           ref={stickyRef}
