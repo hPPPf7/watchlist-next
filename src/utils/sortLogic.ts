@@ -13,10 +13,20 @@ export interface WatchItem {
 
 function getAiredEpisodes(detail: any): number {
   if (!detail) return 0;
-  if (!detail.last_episode_to_air) {
+  let last = detail.last_episode_to_air;
+  const next = detail.next_episode_to_air;
+
+  if (!last) {
     return detail.number_of_episodes ?? 0;
   }
-  const last = detail.last_episode_to_air;
+  // Sometimes TMDB 更新 last_episode_to_air 較慢，
+  // 若下一集的播出日已過，視為已播出
+  if (next && next.air_date) {
+    const airDate = new Date(next.air_date);
+    if (!isNaN(airDate.getTime()) && airDate <= new Date()) {
+      last = next;
+    }
+  }
   const seasons = detail.seasons || [];
   let count = 0;
   for (const s of seasons) {
