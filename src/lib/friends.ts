@@ -77,6 +77,19 @@ export async function removeFriend(uid: string): Promise<void> {
   await deleteDoc(doc(db, 'users', user.uid, 'friends', uid));
 }
 
+export async function addFriendLocally(uid: string): Promise<void> {
+  const user = getCurrentUser();
+  if (!user) throw new Error('未登入');
+
+  const targetSnap = await getDocSafe(doc(db, 'users', uid));
+  if (!targetSnap || !targetSnap.exists()) throw new Error('找不到用戶');
+  const target = targetSnap.data() as any;
+  const nickname = target.nickname || target.displayName || target.name || target.email || uid;
+  const avatar = target.avatar || target.photoURL || '';
+
+  await setDoc(doc(db, 'users', user.uid, 'friends', uid), { nickname, avatar });
+}
+
 export async function addFriendByUid(uid: string): Promise<void> {
   const user = getCurrentUser();
   if (!user) throw new Error('未登入');
@@ -146,4 +159,24 @@ export async function declineFriendInvite(uid: string): Promise<void> {
   const user = getCurrentUser();
   if (!user) throw new Error('未登入');
   await deleteDoc(doc(db, 'users', user.uid, 'friendInvites', uid));
+}
+
+export async function syncInvitedFriends(uids: string[]): Promise<string[]> {
+  const user = getCurrentUser();
+  if (!user || uids.length === 0) return [];
+
+  const added: string[] = [];
+  for (const uid of uids) {
+    const ref = doc(db, 'users', uid, 'friends', user.uid);
+    const snap = await getDocSafe(ref);
+    if (snap && snap.exists()) {
+      try {
+        await addFriendLocally(uid);
+        added.push(uid);
+      } catch (err) {
+        console.warn('⚠️ 同步好友失敗', err);
+      }
+    }
+  }
+  return added;
 }

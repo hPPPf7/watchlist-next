@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendInvites } from '@/hooks/useFriendInvites';
+import { useSyncSentInvites } from '@/hooks/useSyncSentInvites';
 import {
   sendFriendInvite,
   findUserByEmail,
@@ -48,6 +49,12 @@ export function FriendManager() {
   useEffect(() => {
     localStorage.setItem('sentInviteEmails', JSON.stringify(sentInviteEmails));
   }, [sentInviteEmails]);
+
+  useSyncSentInvites(sentInvites, async (synced) => {
+    if (synced.length === 0) return;
+    setSentInvites((prev) => prev.filter((id) => !synced.includes(id)));
+    await reload();
+  });
 
   async function search() {
     if (!email.trim()) {
