@@ -10,6 +10,7 @@ import { type Film } from '@/types/Film';
 import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { useOpenDetail } from '@/hooks/useOpenDetail';
 import { getTMDbDetail } from '@/lib/api';
+import { useFriends } from '@/hooks/useFriends';
 
 type 清單資料 = Record<string, Film>;
 
@@ -48,14 +49,18 @@ function itemTime(item: Film) {
 
   if (!raw) return 0;
 
-  if (typeof raw === 'string') return parseLocalDate(raw).getTime();
-  if (typeof raw === 'object' && typeof raw.toDate === 'function') return raw.toDate().getTime();
+  const value = typeof raw === 'object' && 'watchDate' in raw ? (raw as any).watchDate : raw;
+
+  if (typeof value === 'string') return parseLocalDate(value).getTime();
+  if (typeof value === 'object' && typeof (value as any).toDate === 'function')
+    return (value as any).toDate().getTime();
 
   return 0;
 }
 
 export default function MovieTrackerPage() {
   const { 使用者 } = useUser();
+  const { friends } = useFriends();
   const [清單, 設定清單] = useState<清單資料>({});
   const [載入中, 設定載入中] = useState(true);
   const openDetail = useOpenDetail();
@@ -230,11 +235,23 @@ export default function MovieTrackerPage() {
                 })
                 .map(([id, item]) => {
                   const watchedRaw = item.已看紀錄?.movie;
+                  const together =
+                    watchedRaw && typeof watchedRaw === 'object' && 'togetherWith' in watchedRaw
+                      ? (watchedRaw.togetherWith as string[])
+                      : [];
+                  const friendNames = together
+                    .map((uid) => friends.find((f) => f.uid === uid)?.nickname || uid)
+                    .join('、');
+                  const value =
+                    watchedRaw && typeof watchedRaw === 'object' && 'watchDate' in watchedRaw
+                      ? watchedRaw.watchDate
+                      : watchedRaw;
                   const watchedDate =
-                    typeof watchedRaw === 'string'
-                      ? watchedRaw
-                      : watchedRaw?.toDate?.().toISOString?.() || '';
-
+                    typeof value === 'string'
+                      ? value
+                      : (typeof value === 'object' && typeof (value as any).toDate === 'function'
+                          ? (value as any).toDate().toISOString()
+                          : '') || '';
                   return (
                     <HorizontalFilmCard key={id} film={item} onClick={() => handleOpenDetail(item)}>
                       <p className="text-sm text-gray-500">
@@ -243,6 +260,9 @@ export default function MovieTrackerPage() {
                       <p className="mt-1 text-base font-bold text-green-400">
                         觀看日期：{formatDate(watchedDate)}
                       </p>
+                      {friendNames && (
+                        <p className="text-sm text-zinc-400">和 {friendNames} 一起看</p>
+                      )}
                     </HorizontalFilmCard>
                   );
                 })}

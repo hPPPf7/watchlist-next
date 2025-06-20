@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils';
 import { StyledCalendar } from '@/components/inputs/StyledCalendar';
 import { logWatchedRecord } from '@/lib/popular';
 import { getNextEpisodeInfo } from '@/utils/tv';
+import { useFriends } from '@/hooks/useFriends';
+import { FriendSelect } from '@/components/FriendSelect';
 import { useRef } from 'react';
 
 function getAiredEpisodes(detail: any): number {
@@ -61,6 +63,7 @@ export function DetailDialog({
   initialSeason,
 }: DetailDialogProps) {
   const { 使用者 } = useUser();
+  const { friends } = useFriends();
   const [詳細資料, 設定詳細資料] = useState<Record<string, any> | null>(() => {
     if (film?.詳細 && Object.keys(film.詳細).length > 0) return film.詳細;
     return null;
@@ -91,6 +94,8 @@ export function DetailDialog({
   const [目前選擇的集數ID, 設定目前選擇的集數ID] = useState<number | null>(null);
   const [暫存日期, 設定暫存日期] = useState<Date | null>(null);
   const [編輯模式, 設定編輯模式] = useState(false);
+  const [選擇的朋友, 設定選擇的朋友] = useState<string[]>([]);
+  const [集數朋友, 設定集數朋友] = useState<Record<string, string[]>>({});
   const 集數容器Ref = useRef<HTMLDivElement | null>(null);
   const [要自動捲動的集數, 設定要自動捲動的集數] = useState<{
     season: number;
@@ -132,9 +137,17 @@ export function DetailDialog({
     const entries = Object.entries(episodes || {}).filter(([, v]) => !!v);
     if (entries.length === 0) return null;
 
+    function rawToDate(raw: any): Date {
+      const value = typeof raw === 'object' && 'watchDate' in raw ? raw.watchDate : raw;
+      if (value && typeof value.toDate === 'function') {
+        return value.toDate();
+      }
+      return new Date(value);
+    }
+
     entries.sort((a, b) => {
-      const aDate = typeof a[1]?.toDate === 'function' ? a[1].toDate() : new Date(a[1]);
-      const bDate = typeof b[1]?.toDate === 'function' ? b[1].toDate() : new Date(b[1]);
+      const aDate = rawToDate(a[1]);
+      const bDate = rawToDate(b[1]);
       return bDate.getTime() - aDate.getTime();
     });
 
@@ -261,7 +274,7 @@ export function DetailDialog({
     }
   }
 
-  /** 解析電影觀看日期，支援 string、Timestamp 或 'forgot' */
+  /** 解析電影觀看日期，支援 string、Timestamp 或 'forgot'，並載入一起觀看的朋友 */
   useEffect(() => {
     if (film?.類型 !== 'movie') {
       設定已觀看日期文字(null);
@@ -270,15 +283,26 @@ export function DetailDialog({
 
     const raw = film.已看紀錄?.movie ?? film.詳細?.watchRecord?.movie ?? film.詳細?.已看紀錄?.movie;
 
-    if (!raw) {
+    const together =
+      raw &&
+      typeof raw === 'object' &&
+      'togetherWith' in raw &&
+      Array.isArray((raw as any).togetherWith)
+        ? ((raw as any).togetherWith as string[])
+        : [];
+    設定選擇的朋友(together);
+    const value =
+      raw && typeof raw === 'object' && 'watchDate' in raw ? (raw as any).watchDate : raw;
+
+    if (!value) {
       設定已觀看日期文字(null);
-    } else if (raw === 'forgot') {
+    } else if (value === 'forgot') {
       設定已觀看日期文字('忘記日期');
-    } else if (typeof raw === 'string') {
-      const matched = /^\d{4}-\d{2}-\d{2}$/.exec(raw);
+    } else if (typeof value === 'string') {
+      const matched = /^\d{4}-\d{2}-\d{2}$/.exec(value);
       設定已觀看日期文字(matched ? matched[0] : null);
-    } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
-      const date = raw.toDate();
+    } else if (typeof value === 'object' && typeof (value as any).toDate === 'function') {
+      const date = (value as any).toDate();
       if (!isNaN(date.getTime())) {
         設定已觀看日期文字(date.toISOString().slice(0, 10));
       } else {
@@ -307,19 +331,31 @@ export function DetailDialog({
         film.詳細?.已看紀錄?.episodes ??
         {};
       const parsed: Record<string, Date | null> = {};
+      const friendsMap: Record<string, string[]> = {};
 
       for (const key in record) {
         const value = record[key];
         if (!value) continue;
+
+        const together =
+          typeof value === 'object' &&
+          'togetherWith' in value &&
+          Array.isArray((value as any).togetherWith)
+            ? ((value as any).togetherWith as string[])
+            : [];
+        friendsMap[key] = together;
+
+        const v =
+          typeof value === 'object' && 'watchDate' in value ? (value as any).watchDate : value;
         let date: Date | null = null;
 
-        if (value instanceof Date && isValid(value)) {
-          date = value;
-        } else if (value && typeof value.toDate === 'function') {
-          const d = value.toDate();
+        if (v instanceof Date && isValid(v)) {
+          date = v;
+        } else if (v && typeof (v as any).toDate === 'function') {
+          const d = (v as any).toDate();
           date = isValid(d) ? d : null;
-        } else if (typeof value === 'string') {
-          const d = new Date(value);
+        } else if (typeof v === 'string') {
+          const d = new Date(v);
           date = isValid(d) ? d : null;
         }
 
@@ -329,6 +365,7 @@ export function DetailDialog({
       }
 
       設定集數日期(parsed);
+      設定集數朋友(friendsMap);
     }
   }, [open, film]);
 
@@ -340,12 +377,22 @@ export function DetailDialog({
 
     let parsed: Date | 'forgot' | null = null;
 
-    if (raw === 'forgot') {
-      parsed = 'forgot';
-    } else if (typeof raw === 'string') {
-      parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw) : null;
-    } else if (typeof raw === 'object' && typeof raw.toDate === 'function') {
-      const d = raw.toDate();
+    const together =
+      raw &&
+      typeof raw === 'object' &&
+      'togetherWith' in raw &&
+      Array.isArray((raw as any).togetherWith)
+        ? ((raw as any).togetherWith as string[])
+        : [];
+    設定選擇的朋友(together);
+    const value =
+      raw && typeof raw === 'object' && 'watchDate' in raw ? (raw as any).watchDate : raw;
+
+    if (value === 'forgot') {
+    } else if (typeof value === 'string') {
+      parsed = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value) : null;
+    } else if (typeof value === 'object' && typeof (value as any).toDate === 'function') {
+      const d = (value as any).toDate();
       if (!isNaN(d.getTime())) parsed = d;
     }
 
@@ -594,7 +641,7 @@ export function DetailDialog({
                                       onClick={async () => {
                                         if (!film) return;
                                         try {
-                                          await updateMovieWatchDate(film.tmdbId, null);
+                                          await updateMovieWatchDate(film.tmdbId, null, []);
                                           await logWatchedRecord(film.tmdbId, 'movie', 'remove');
                                           設定觀看日期(null);
                                           設定已確認(false);
@@ -643,6 +690,11 @@ export function DetailDialog({
                                     </p>
                                   )}
                                   {輸入錯誤 && <p className="text-sm text-red-400">{錯誤訊息}</p>}
+                                  <FriendSelect
+                                    friends={friends}
+                                    value={選擇的朋友}
+                                    onChange={設定選擇的朋友}
+                                  />
                                 </div>
 
                                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -705,7 +757,11 @@ export function DetailDialog({
                                         if (!is追蹤中 && onToggleWatchlist) {
                                           await onToggleWatchlist(film);
                                         }
-                                        await updateMovieWatchDate(film.tmdbId, formatted);
+                                        await updateMovieWatchDate(
+                                          film.tmdbId,
+                                          formatted,
+                                          選擇的朋友,
+                                        );
                                         await logWatchedRecord(film.tmdbId, 'movie');
                                         設定已觀看日期文字(
                                           formatted === 'forgot' ? '忘記日期' : formatted,
@@ -832,7 +888,12 @@ export function DetailDialog({
                                             e.stopPropagation();
                                             const key = `${ep.season_number}-${ep.episode_number}`;
                                             try {
-                                              await updateEpisodeWatchDate(film.tmdbId, key, null);
+                                              await updateEpisodeWatchDate(
+                                                film.tmdbId,
+                                                key,
+                                                null,
+                                                [],
+                                              );
                                               await logWatchedRecord(film.tmdbId, 'tv', 'remove');
                                               設定集數日期((prev) => ({
                                                 ...prev,
@@ -868,6 +929,7 @@ export function DetailDialog({
                                                 film.tmdbId,
                                                 key,
                                                 format(date, 'yyyy-MM-dd'),
+                                                集數朋友[key] || [],
                                               );
                                               await logWatchedRecord(film.tmdbId, 'tv');
 
@@ -903,6 +965,18 @@ export function DetailDialog({
                                             }
                                           }
                                         }}
+                                      />
+                                      <FriendSelect
+                                        friends={friends}
+                                        value={
+                                          集數朋友[`${ep.season_number}-${ep.episode_number}`] || []
+                                        }
+                                        onChange={(v) =>
+                                          設定集數朋友((prev) => ({
+                                            ...prev,
+                                            [`${ep.season_number}-${ep.episode_number}`]: v,
+                                          }))
+                                        }
                                       />
                                     </div>
                                   )}

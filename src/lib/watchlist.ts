@@ -154,16 +154,26 @@ export async function updateWatchlist(newWatchlist: Record<string, any>): Promis
   }
 }
 
-export async function updateMovieWatchDate(tmdbId: number, date: string | 'forgot' | null) {
+export async function updateMovieWatchDate(
+  tmdbId: number,
+  date: string | 'forgot' | null,
+  togetherWith: string[] = [],
+) {
   const 使用者 = getCurrentUser();
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
   try {
-    await updateDoc(ref, {
-      [`追蹤清單.${tmdbId}.已看紀錄.movie`]:
-        date && date !== 'forgot' ? Timestamp.fromDate(new Date(date)) : date,
-    });
+    if (date == null) {
+      await updateDoc(ref, { [`追蹤清單.${tmdbId}.已看紀錄.movie`]: null });
+    } else {
+      await updateDoc(ref, {
+        [`追蹤清單.${tmdbId}.已看紀錄.movie`]: {
+          watchDate: date !== 'forgot' ? Timestamp.fromDate(new Date(date)) : 'forgot',
+          togetherWith,
+        },
+      });
+    }
   } catch (err) {
     console.warn('⚠️ 更新電影觀看日期失敗', err);
     throw err;
@@ -174,17 +184,25 @@ export async function updateEpisodeWatchDate(
   tmdbId: number,
   episodeKey: string,
   date: string | null,
+  togetherWith: string[] = [],
 ) {
   const 使用者 = getCurrentUser();
   if (!使用者) throw new Error('未登入');
 
   const ref = doc(db, 'users', 使用者.uid);
   try {
-    await updateDoc(ref, {
-      [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: date
-        ? Timestamp.fromDate(new Date(date))
-        : null,
-    });
+    if (date == null) {
+      await updateDoc(ref, {
+        [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: null,
+      });
+    } else {
+      await updateDoc(ref, {
+        [`追蹤清單.${tmdbId}.已看紀錄.episodes.${episodeKey}`]: {
+          watchDate: Timestamp.fromDate(new Date(date)),
+          togetherWith,
+        },
+      });
+    }
     invalidateSeasonCache(tmdbId);
   } catch (err) {
     console.warn('⚠️ 更新影集觀看日期失敗', err);
