@@ -94,10 +94,14 @@ export async function addFriendByUid(uid: string): Promise<void> {
     const me = meSnap.data() as any;
     const myNickname = me.nickname || me.displayName || me.name || me.email || user.uid;
     const myAvatar = me.avatar || me.photoURL || '';
-    await setDoc(doc(db, 'users', uid, 'friends', user.uid), {
-      nickname: myNickname,
-      avatar: myAvatar,
-    });
+    try {
+      await setDoc(doc(db, 'users', uid, 'friends', user.uid), {
+        nickname: myNickname,
+        avatar: myAvatar,
+      });
+    } catch (err) {
+      console.warn('⚠️ 無法更新對方好友列表', err);
+    }
   }
 }
 
@@ -125,7 +129,16 @@ export async function acceptFriendInvite(uid: string): Promise<void> {
   const user = getCurrentUser();
   if (!user) throw new Error('未登入');
 
-  await addFriendByUid(uid);
+  const targetSnap = await getDocSafe(doc(db, 'users', uid));
+  if (!targetSnap || !targetSnap.exists()) throw new Error('找不到用戶');
+  const target = targetSnap.data() as any;
+  const nickname = target.nickname || target.displayName || target.name || target.email || uid;
+  const avatar = target.avatar || target.photoURL || '';
+
+  await setDoc(doc(db, 'users', user.uid, 'friends', uid), {
+    nickname,
+    avatar,
+  });
   await deleteDoc(doc(db, 'users', user.uid, 'friendInvites', uid));
 }
 
