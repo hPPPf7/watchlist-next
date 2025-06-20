@@ -130,12 +130,16 @@ export function FriendManager() {
               <div className="relative size-8 shrink-0">
                 <ImageWithFallback
                   src={candidate.avatar || candidate.photoURL}
-                  alt="頭像"
+                  alt={
+                    candidate.nickname || candidate.displayName || candidate.name || candidate.email
+                  }
                   className="rounded-full"
                 />
               </div>
             )}
-            <span className="truncate">{candidate.email}</span>
+            <span className="truncate">
+              {candidate.nickname || candidate.displayName || candidate.name || candidate.email}
+            </span>
           </div>
         )}
         {invites.length > 0 && (
