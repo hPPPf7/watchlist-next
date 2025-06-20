@@ -103,7 +103,7 @@ export function FriendManager() {
   }
 
   return (
-    <Card className="border-zinc-700 bg-zinc-900 text-white">
+    <Card className="w-full max-w-md border-zinc-700 bg-zinc-900 text-white">
       <CardHeader>
         <CardTitle>朋友管理</CardTitle>
       </CardHeader>

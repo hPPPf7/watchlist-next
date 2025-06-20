@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { onAuthStateChanged, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
 import { toast } from 'sonner';
 import { auth, provider } from '@/lib/firebase'; // ✅ 改用已初始化的 auth 與 provider
+import { ensureUserDocument } from '@/lib/users';
 
 // --- 型別定義 ---
 type 使用者資訊 = FirebaseUser | null;
@@ -31,6 +32,7 @@ export function UserProvider({ children }: UserProviderProps) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       設定使用者(user);
       setIsLoading(false);
+      ensureUserDocument(user).catch((err) => console.warn('⚠️ 無法建立使用者資料', err));
     });
     return () => unsubscribe();
   }, []);
