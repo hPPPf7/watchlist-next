@@ -10,6 +10,8 @@ import {
   acceptFriendInvite,
   declineFriendInvite,
 } from '@/lib/friends';
+import { db, getDocSafe } from '@/lib/firebase';
+import { doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -52,7 +54,14 @@ export function FriendManager() {
 
   useSyncSentInvites(sentInvites, async (synced) => {
     if (synced.length === 0) return;
+    const snaps = await Promise.all(synced.map((uid) => getDocSafe(doc(db, 'users', uid))));
+    const mails = snaps
+      .map((s) => (s && s.exists() ? (s.data() as any).email?.toLowerCase() : ''))
+      .filter(Boolean);
     setSentInvites((prev) => prev.filter((id) => !synced.includes(id)));
+    if (mails.length > 0) {
+      setSentInviteEmails((prev) => prev.filter((m) => !mails.includes(m)));
+    }
     await reload();
   });
 
@@ -78,18 +87,21 @@ export function FriendManager() {
     if (!email.trim()) return;
     setLoading(true);
     try {
-      const targetId = candidate?.uid;
-      await sendFriendInvite(email.trim());
+      const uid = await sendFriendInvite(email.trim());
       toast.success('邀請已發送');
-      if (targetId) {
-        setSentInvites((prev) => (prev.includes(targetId) ? prev : [...prev, targetId]));
-      }
+
+      setSentInvites((prev) => (prev.includes(uid) ? prev : [...prev, uid]));
       setSentInviteEmails((prev) => {
         const mail = email.trim().toLowerCase();
         return prev.includes(mail) ? prev : [...prev, mail];
       });
+
+      if (!candidate) {
+        const result = await findUserByEmail(email.trim());
+        if (result) setCandidate(result);
+      }
+
       setEmail('');
-      setCandidate(null);
       await reloadInvites();
     } catch (err) {
       console.error('發送邀請失敗', err);
@@ -168,7 +180,7 @@ export function FriendManager() {
             disabled={loading || !email.trim() || isFriend || isInvited}
             className="whitespace-nowrap"
           >
-            {isFriend ? '已是朋友' : isInvited ? '已發送邀請' : '發送邀請'}
+            {isFriend ? '已是朋友' : isInvited ? '邀請中' : '發送邀請'}
           </Button>
         </div>
         {candidate && (
@@ -189,7 +201,7 @@ export function FriendManager() {
             </span>
             {isFriend && <span className="ml-auto text-sm text-green-400">已是朋友</span>}
             {isInvited && !isFriend && (
-              <span className="ml-auto text-sm text-zinc-400">已發送邀請</span>
+              <span className="ml-auto text-sm text-zinc-400">邀請中</span>
             )}
           </div>
         )}

@@ -118,7 +118,7 @@ export async function addFriendByUid(uid: string): Promise<void> {
   }
 }
 
-export async function sendFriendInvite(email: string): Promise<void> {
+export async function sendFriendInvite(email: string): Promise<string> {
   const user = getCurrentUser();
   if (!user) throw new Error('未登入');
 
@@ -136,6 +136,8 @@ export async function sendFriendInvite(email: string): Promise<void> {
     email: user.email || '',
     createdAt: serverTimestamp(),
   });
+
+  return target.uid;
 }
 
 export async function acceptFriendInvite(uid: string): Promise<void> {
