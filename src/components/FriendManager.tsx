@@ -245,6 +245,7 @@ export function FriendManager() {
                 </div>
                 <Button
                   variant="outline"
+                  className="text-black"
                   size="sm"
                   onClick={() => handleRemove(f.uid)}
                   disabled={loading}
