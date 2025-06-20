@@ -47,7 +47,7 @@ export default function AccountPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 sm:p-8">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center gap-4 p-4 sm:p-8">
       <Card className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 text-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-center text-3xl font-bold text-white">🎬 追劇小助手</CardTitle>
@@ -98,11 +98,11 @@ export default function AccountPage() {
                   登出
                 </Button>
               </div>
-              <FriendManager />
             </>
           )}
         </CardContent>
       </Card>
+      {使用者 && <FriendManager />}
     </div>
   );
 }

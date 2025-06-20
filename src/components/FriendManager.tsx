@@ -1,7 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useFriends } from '@/hooks/useFriends';
-import { addFriendByEmail, findUserByEmail, removeFriend } from '@/lib/friends';
+import { useFriendInvites } from '@/hooks/useFriendInvites';
+import {
+  sendFriendInvite,
+  findUserByEmail,
+  removeFriend,
+  acceptFriendInvite,
+  declineFriendInvite,
+} from '@/lib/friends';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +17,7 @@ import { toast } from 'sonner';
 
 export function FriendManager() {
   const { friends, reload } = useFriends();
+  const { invites, reload: reloadInvites } = useFriendInvites();
   const [email, setEmail] = useState('');
   const [candidate, setCandidate] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,18 +40,18 @@ export function FriendManager() {
     }
   }
 
-  async function handleAdd() {
-    if (!candidate) return;
+  async function handleInvite() {
+    if (!email.trim()) return;
     setLoading(true);
     try {
-      await addFriendByEmail(email.trim());
-      toast.success('已新增朋友');
+      await sendFriendInvite(email.trim());
+      toast.success('邀請已發送');
       setEmail('');
       setCandidate(null);
-      await reload();
+      await reloadInvites();
     } catch (err) {
-      console.error('新增朋友失敗', err);
-      toast.error('新增失敗');
+      console.error('發送邀請失敗', err);
+      toast.error('邀請失敗');
     } finally {
       setLoading(false);
     }
@@ -64,6 +72,36 @@ export function FriendManager() {
     }
   }
 
+  async function handleAccept(uid: string) {
+    if (!uid) return;
+    setLoading(true);
+    try {
+      await acceptFriendInvite(uid);
+      toast.success('已新增朋友');
+      await Promise.all([reload(), reloadInvites()]);
+    } catch (err) {
+      console.error('接受邀請失敗', err);
+      toast.error('處理失敗');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDecline(uid: string) {
+    if (!uid) return;
+    setLoading(true);
+    try {
+      await declineFriendInvite(uid);
+      toast.success('已拒絕邀請');
+      await reloadInvites();
+    } catch (err) {
+      console.error('拒絕邀請失敗', err);
+      toast.error('處理失敗');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <Card className="border-zinc-700 bg-zinc-900 text-white">
       <CardHeader>
@@ -79,11 +117,11 @@ export function FriendManager() {
             className="flex-1"
           />
           <Button
-            onClick={handleAdd}
-            disabled={loading || !candidate}
+            onClick={handleInvite}
+            disabled={loading || !email.trim()}
             className="whitespace-nowrap"
           >
-            新增
+            發送邀請
           </Button>
         </div>
         {candidate && (
@@ -98,6 +136,45 @@ export function FriendManager() {
               </div>
             )}
             <span className="truncate">{candidate.email}</span>
+          </div>
+        )}
+        {invites.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm text-zinc-400">收到的邀請</p>
+            <ul className="space-y-2">
+              {invites.map((inv) => (
+                <li
+                  key={inv.uid}
+                  className="flex items-center justify-between gap-2 rounded bg-zinc-800 p-2"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    {inv.avatar && (
+                      <div className="relative size-8 shrink-0">
+                        <ImageWithFallback
+                          src={inv.avatar}
+                          alt={inv.nickname}
+                          className="rounded-full"
+                        />
+                      </div>
+                    )}
+                    <span className="truncate">{inv.nickname}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={() => handleAccept(inv.uid)} disabled={loading}>
+                      接受
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDecline(inv.uid)}
+                      disabled={loading}
+                    >
+                      拒絕
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {friends.length === 0 ? (
