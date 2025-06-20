@@ -9,6 +9,10 @@ interface Props {
 }
 
 export function FriendSelect({ friends, value, onChange }: Props) {
+  if (friends.length === 0) {
+    return <p className="text-sm text-zinc-400">你目前沒有朋友可選擇</p>;
+  }
+
   function toggle(uid: string) {
     if (value.includes(uid)) {
       onChange(value.filter((id) => id !== uid));

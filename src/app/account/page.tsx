@@ -95,6 +95,9 @@ export default function AccountPage() {
               >
                 登出
               </Button>
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <a href="/account/friends">朋友管理</a>
+              </Button>
             </div>
           )}
         </CardContent>

@@ -62,7 +62,7 @@ export function DetailDialog({
   追蹤狀態,
   initialSeason,
 }: DetailDialogProps) {
-  const { 使用者 } = useUser();
+  useUser();
   const { friends } = useFriends();
   const [詳細資料, 設定詳細資料] = useState<Record<string, any> | null>(() => {
     if (film?.詳細 && Object.keys(film.詳細).length > 0) return film.詳細;
@@ -85,12 +85,9 @@ export function DetailDialog({
   const is處理中 = 暫時追蹤狀態 === 'loading' || 追蹤狀態?.[film?.tmdbId ?? -1] === 'loading';
   const [觀看日期, 設定觀看日期] = useState<Date | 'forgot' | null>(null);
   const [已確認, 設定已確認] = useState(false);
-  const [日期輸入, 設定日期輸入] = useState('');
   const [輸入錯誤, 設定輸入錯誤] = useState(false);
   const [錯誤訊息, 設定錯誤訊息] = useState('');
-  const [日曆開啟, 設定日曆開啟] = useState(false);
   const [集數日期, 設定集數日期] = useState<Record<string, Date | null>>({});
-  const [展開中的Popover, 設定展開中的Popover] = useState<number | null>(null);
   const [目前選擇的集數ID, 設定目前選擇的集數ID] = useState<number | null>(null);
   const [暫存日期, 設定暫存日期] = useState<Date | null>(null);
   const [編輯模式, 設定編輯模式] = useState(false);
@@ -157,16 +154,6 @@ export function DetailDialog({
       season: parseInt(seasonStr, 10),
       episode: parseInt(episodeStr, 10),
     };
-  }
-
-  function scrollToEpisode(season: number, episode: number) {
-    const key = `S${season}E${episode}`;
-    const el = document.querySelector(`[data-episode="${key}"]`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      console.warn(`⚠️ 無法找到集數元素: [data-episode="${key}"]`);
-    }
   }
 
   useEffect(() => {
@@ -398,15 +385,9 @@ export function DetailDialog({
 
     if (parsed) {
       設定觀看日期(parsed);
-      if (parsed instanceof Date) {
-        設定日期輸入(format(parsed, 'yyyy/MM/dd'));
-      } else {
-        設定日期輸入('');
-      }
       設定已確認(true);
     } else {
       設定觀看日期(null);
-      設定日期輸入('');
       設定已確認(false);
     }
   }, [open, film]);
@@ -415,7 +396,6 @@ export function DetailDialog({
     if (!open) {
       設定觀看日期(null);
       設定已確認(false);
-      設定日期輸入('');
       設定輸入錯誤(false);
       設定錯誤訊息('');
     }
@@ -620,13 +600,26 @@ export function DetailDialog({
                           <div className="flex flex-col items-center gap-4">
                             {已確認 && !編輯模式 ? (
                               <>
-                                <div className="flex w-full items-center justify-between gap-4 rounded-lg bg-zinc-800 p-4">
-                                  <p className="font-semibold text-zinc-200">
-                                    🎬 目前紀錄：{' '}
-                                    {觀看日期 === 'forgot'
-                                      ? '❓ 忘記日期'
-                                      : format(觀看日期 as Date, 'yyyy-MM-dd')}
-                                  </p>
+                                <div className="flex w-full items-start justify-between gap-4 rounded-lg bg-zinc-800 p-4">
+                                  <div>
+                                    <p className="font-semibold text-zinc-200">
+                                      🎬 目前紀錄：{' '}
+                                      {觀看日期 === 'forgot'
+                                        ? '❓ 忘記日期'
+                                        : format(觀看日期 as Date, 'yyyy-MM-dd')}
+                                    </p>
+                                    {(() => {
+                                      const names = 選擇的朋友
+                                        .map(
+                                          (uid) =>
+                                            friends.find((f) => f.uid === uid)?.nickname || uid,
+                                        )
+                                        .join('、');
+                                      return names ? (
+                                        <p className="text-sm text-zinc-400">和 {names} 一起看</p>
+                                      ) : null;
+                                    })()}
+                                  </div>
                                   <div className="flex gap-2">
                                     <Button
                                       variant="outline"
@@ -911,6 +904,18 @@ export function DetailDialog({
                                         </Button>
                                       )}
                                     </div>
+                                    {selectedDate && (集數朋友[key] || []).length > 0 && (
+                                      <p className="ml-2 text-xs text-zinc-400">
+                                        和
+                                        {(集數朋友[key] || [])
+                                          .map(
+                                            (uid) =>
+                                              friends.find((f) => f.uid === uid)?.nickname || uid,
+                                          )
+                                          .join('、')}{' '}
+                                        一起看
+                                      </p>
+                                    )}
                                   </div>
 
                                   {/* 展開日曆 */}
