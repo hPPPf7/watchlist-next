@@ -10,6 +10,7 @@ import { useUser } from '@/hooks/useUser';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
+import { FriendManager } from '@/components/FriendManager';
 
 export default function AccountPage() {
   const { 使用者 } = useUser();
@@ -73,32 +74,32 @@ export default function AccountPage() {
               </Button>
             </>
           ) : (
-            <div className="flex flex-col flex-wrap items-center gap-4 sm:flex-row sm:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                {使用者.photoURL && (
-                  <div className="relative size-12 shrink-0">
-                    <ImageWithFallback
-                      src={使用者.photoURL}
-                      alt="頭像"
-                      className="rounded-full border border-zinc-600 shadow"
-                    />
+            <>
+              <div className="flex flex-col flex-wrap items-center gap-4 sm:flex-row sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  {使用者.photoURL && (
+                    <div className="relative size-12 shrink-0">
+                      <ImageWithFallback
+                        src={使用者.photoURL}
+                        alt="頭像"
+                        className="rounded-full border border-zinc-600 shadow"
+                      />
+                    </div>
+                  )}
+                  <div className="truncate text-left">
+                    <p className="truncate font-semibold">{使用者.displayName || '使用者'}</p>
+                    <p className="truncate text-sm text-zinc-400">{使用者.email}</p>
                   </div>
-                )}
-                <div className="truncate text-left">
-                  <p className="truncate font-semibold">{使用者.displayName || '使用者'}</p>
-                  <p className="truncate text-sm text-zinc-400">{使用者.email}</p>
                 </div>
+                <Button
+                  onClick={登出}
+                  className="w-full rounded-lg border border-zinc-600 bg-zinc-700 px-6 py-2 text-white transition duration-200 hover:border-red-600 hover:bg-red-600 sm:w-auto"
+                >
+                  登出
+                </Button>
               </div>
-              <Button
-                onClick={登出}
-                className="w-full rounded-lg border border-zinc-600 bg-zinc-700 px-6 py-2 text-white transition duration-200 hover:border-red-600 hover:bg-red-600 sm:w-auto"
-              >
-                登出
-              </Button>
-              <Button asChild variant="outline" className="w-full sm:w-auto">
-                <a href="/account/friends">朋友管理</a>
-              </Button>
-            </div>
+              <FriendManager />
+            </>
           )}
         </CardContent>
       </Card>
