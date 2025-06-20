@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendInvites } from '@/hooks/useFriendInvites';
 import {
@@ -21,6 +21,33 @@ export function FriendManager() {
   const [email, setEmail] = useState('');
   const [candidate, setCandidate] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sentInvites, setSentInvites] = useState<string[]>([]);
+  const [sentInviteEmails, setSentInviteEmails] = useState<string[]>([]);
+
+  // 讀取 localStorage 中保存的邀請紀錄
+  useEffect(() => {
+    try {
+      const ids = JSON.parse(localStorage.getItem('sentInvites') || '[]');
+      if (Array.isArray(ids)) setSentInvites(ids);
+    } catch (err) {
+      console.warn('failed to parse sentInvites', err);
+    }
+    try {
+      const mails = JSON.parse(localStorage.getItem('sentInviteEmails') || '[]');
+      if (Array.isArray(mails)) setSentInviteEmails(mails);
+    } catch (err) {
+      console.warn('failed to parse sentInviteEmails', err);
+    }
+  }, []);
+
+  // 將邀請紀錄同步到 localStorage
+  useEffect(() => {
+    localStorage.setItem('sentInvites', JSON.stringify(sentInvites));
+  }, [sentInvites]);
+
+  useEffect(() => {
+    localStorage.setItem('sentInviteEmails', JSON.stringify(sentInviteEmails));
+  }, [sentInviteEmails]);
 
   async function search() {
     if (!email.trim()) {
@@ -44,8 +71,16 @@ export function FriendManager() {
     if (!email.trim()) return;
     setLoading(true);
     try {
+      const targetId = candidate?.uid;
       await sendFriendInvite(email.trim());
       toast.success('邀請已發送');
+      if (targetId) {
+        setSentInvites((prev) => (prev.includes(targetId) ? prev : [...prev, targetId]));
+      }
+      setSentInviteEmails((prev) => {
+        const mail = email.trim().toLowerCase();
+        return prev.includes(mail) ? prev : [...prev, mail];
+      });
       setEmail('');
       setCandidate(null);
       await reloadInvites();
@@ -102,6 +137,11 @@ export function FriendManager() {
     }
   }
 
+  const isFriend = candidate ? friends.some((f) => f.uid === candidate.uid) : false;
+  const isInvited = candidate
+    ? sentInvites.includes(candidate.uid) || sentInviteEmails.includes(email.trim().toLowerCase())
+    : sentInviteEmails.includes(email.trim().toLowerCase());
+
   return (
     <Card className="w-full max-w-md border-zinc-700 bg-zinc-900 text-white">
       <CardHeader>
@@ -118,10 +158,10 @@ export function FriendManager() {
           />
           <Button
             onClick={handleInvite}
-            disabled={loading || !email.trim()}
+            disabled={loading || !email.trim() || isFriend || isInvited}
             className="whitespace-nowrap"
           >
-            發送邀請
+            {isFriend ? '已是朋友' : isInvited ? '已發送邀請' : '發送邀請'}
           </Button>
         </div>
         {candidate && (
@@ -140,6 +180,10 @@ export function FriendManager() {
             <span className="truncate">
               {candidate.nickname || candidate.displayName || candidate.name || candidate.email}
             </span>
+            {isFriend && <span className="ml-auto text-sm text-green-400">已是朋友</span>}
+            {isInvited && !isFriend && (
+              <span className="ml-auto text-sm text-zinc-400">已發送邀請</span>
+            )}
           </div>
         )}
         {invites.length > 0 && (
@@ -170,6 +214,7 @@ export function FriendManager() {
                     <Button
                       size="sm"
                       variant="outline"
+                      className="text-black"
                       onClick={() => handleDecline(inv.uid)}
                       disabled={loading}
                     >
