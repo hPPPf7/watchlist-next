@@ -180,13 +180,18 @@ export default function SeriesProgressPage() {
     }
   };
 
+  const handleUpdated = async () => {
+    hasScrolledRef.current = false;
+    await 載入清單();
+  };
+
   const handleOpenDetail = (item: Film, season?: number) => {
     openDetail({
       film: { ...item, 類型: 'tv' },
       from: 'progress',
       onToggleWatchlist: handleToggleWatchlist,
       追蹤狀態: Object.fromEntries(Object.keys(清單).map((id) => [Number(id), true])),
-      onUpdated: 載入清單,
+      onUpdated: handleUpdated,
       season,
     });
   };

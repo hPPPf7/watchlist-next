@@ -75,6 +75,9 @@ export function 分類排序觀看進度(清單: 清單資料) {
   有新集數未看.sort((a, b) => b.最後觀看時間 - a.最後觀看時間);
   有紀錄中.sort((a, b) => b.最後觀看時間 - a.最後觀看時間);
   已看完.sort((a, b) => a.最後觀看時間 - b.最後觀看時間);
+  尚未看過.sort(
+    (a, b) => new Date(b.item.加入時間 ?? 0).getTime() - new Date(a.item.加入時間 ?? 0).getTime(),
+  );
 
   return { 有新集數未看, 有紀錄中, 尚未看過, 已看完 };
 }
