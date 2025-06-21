@@ -44,7 +44,7 @@ export function 分類排序觀看進度(清單: 清單資料) {
   const 有新集數未看: WatchItem[] = [];
   const 有紀錄中: WatchItem[] = [];
   const 已看完: WatchItem[] = [];
-  const 尚未看過: { id: string; item: Film }[] = [];
+  const 尚未看過: { id: string; item: Film; 加入時間: number }[] = [];
 
   function extractTime(raw: any): number {
     const value = raw && typeof raw === 'object' && 'watchDate' in raw ? raw.watchDate : raw;
@@ -55,44 +55,60 @@ export function 分類排序觀看進度(清單: 清單資料) {
   }
 
   for (const [id, item] of Object.entries(清單)) {
-    const 已看集 = Object.entries(item.已看紀錄?.episodes ?? {})
-      .filter(([, v]) => !!v)
-      .map(([k]) => k);
-    const episodeTimes = Object.values(item.已看紀錄?.episodes ?? {})
-      .filter(Boolean)
-      .map((v) => extractTime(v));
+    const episodesWatched = Object.entries(item.已看紀錄?.episodes ?? {}).filter(([, v]) => !!v);
+    const watchTimes = episodesWatched.map(([, v]) => extractTime(v));
+    const 最近觀看時間 = watchTimes.length > 0 ? Math.max(...watchTimes) : 0;
 
-    let 最後觀看時間 = item.最後觀看時間 ? new Date(item.最後觀看時間).getTime() : 0;
-    if (episodeTimes.length > 0) {
-      最後觀看時間 = Math.max(最後觀看時間, ...episodeTimes);
-    }
+    const 加入時間 = item.加入時間 ? new Date(item.加入時間).getTime() : 0;
+    const 最新時間 = 最近觀看時間 || 加入時間;
 
-    if (已看集.length === 0) {
-      尚未看過.push({ id, item });
-      continue;
-    }
+    const watchedCount = episodesWatched.length;
+    const airedCount = getAiredEpisodes(item.詳細);
+    const totalCount = item.集數 ?? airedCount;
 
-    const 已播集數 = getAiredEpisodes(item.詳細);
-
-    if (已看集.length >= 已播集數) {
-      已看完.push({ id, item, 最後觀看時間 });
+    if (watchedCount === 0) {
+      尚未看過.push({ id, item, 加入時間 });
+    } else if (watchedCount >= totalCount && watchedCount >= airedCount) {
+      // 看完全部
+      已看完.push({ id, item, 最後觀看時間: 最近觀看時間 });
     } else {
-      const 曾經看完 = item.集數 != null && 已看集.length >= item.集數;
-      const 新集 = 曾經看完 && 已播集數 > item.集數!;
-      if (新集) {
-        有新集數未看.push({ id, item, 最後觀看時間, 新集: true });
+      const hasNew = watchedCount >= totalCount && airedCount > totalCount;
+      if (hasNew) {
+        有新集數未看.push({ id, item, 最後觀看時間: 最近觀看時間, 新集: true });
       } else {
-        有紀錄中.push({ id, item, 最後觀看時間 });
+        有紀錄中.push({ id, item, 最後觀看時間: 最近觀看時間 });
       }
     }
   }
 
-  有新集數未看.sort((a, b) => b.最後觀看時間 - a.最後觀看時間);
-  有紀錄中.sort((a, b) => b.最後觀看時間 - a.最後觀看時間);
-  已看完.sort((a, b) => a.最後觀看時間 - b.最後觀看時間);
-  尚未看過.sort(
-    (a, b) => new Date(b.item.加入時間 ?? 0).getTime() - new Date(a.item.加入時間 ?? 0).getTime(),
-  );
+  有新集數未看.sort((a, b) => {
+    if (b.最後觀看時間 !== a.最後觀看時間) {
+      return b.最後觀看時間 - a.最後觀看時間;
+    }
+    return new Date(b.item.加入時間 ?? 0).getTime() - new Date(a.item.加入時間 ?? 0).getTime();
+  });
+
+  有紀錄中.sort((a, b) => {
+    if (b.最後觀看時間 !== a.最後觀看時間) {
+      return b.最後觀看時間 - a.最後觀看時間;
+    }
+    // 同天的話，後加的應該排上面
+    const 加入時間A = new Date(a.item.加入時間 ?? 0).getTime();
+    const 加入時間B = new Date(b.item.加入時間 ?? 0).getTime();
+    return 加入時間B - 加入時間A;
+  });
+
+  已看完.sort((a, b) => {
+    if (a.最後觀看時間 !== b.最後觀看時間) {
+      return a.最後觀看時間 - b.最後觀看時間;
+    }
+    // 同天完成的話，早加入的在上
+    const 加入時間A = new Date(a.item.加入時間 ?? 0).getTime();
+    const 加入時間B = new Date(b.item.加入時間 ?? 0).getTime();
+    return 加入時間A - 加入時間B;
+  });
+
+  尚未看過.sort((a, b) => b.加入時間 - a.加入時間); // 最新加入的在上
 
   return { 有新集數未看, 有紀錄中, 尚未看過, 已看完 };
 }
