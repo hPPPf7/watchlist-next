@@ -60,7 +60,6 @@ export function 分類排序觀看進度(清單: 清單資料) {
     const 最近觀看時間 = watchTimes.length > 0 ? Math.max(...watchTimes) : 0;
 
     const 加入時間 = item.加入時間 ? new Date(item.加入時間).getTime() : 0;
-    const 最新時間 = 最近觀看時間 || 加入時間;
 
     const watchedCount = episodesWatched.length;
     const airedCount = getAiredEpisodes(item.詳細);
