@@ -65,12 +65,32 @@ export async function getWatchlist(): Promise<Record<string, any>> {
       } catch (err) {
         console.warn(`⚠️ 無法補上 ${item.title} 詳細資料`, err);
       }
-    } else if (item.類型 === 'tv' && item.集數 == null) {
-      更新清單[id] = {
-        ...item,
-        集數: item.詳細?.number_of_episodes ?? null,
-      };
-      有更新 = true;
+    } else if (item.類型 === 'tv') {
+      const nextAirDate = item.詳細?.next_episode_to_air?.air_date;
+      if (nextAirDate && !isNaN(new Date(nextAirDate).getTime())) {
+        const airTime = new Date(nextAirDate).getTime();
+        if (airTime <= Date.now()) {
+          try {
+            const 詳細 = await getTMDbDetail('tv', item.tmdbId!);
+            更新清單[id] = {
+              ...item,
+              上映日: 詳細.release_date || 詳細.first_air_date || item.上映日 || '',
+              季數: 詳細.number_of_seasons ?? item.季數 ?? null,
+              集數: 詳細.number_of_episodes ?? item.集數 ?? null,
+              詳細,
+            };
+            有更新 = true;
+          } catch (err) {
+            console.warn(`⚠️ 更新 ${item.title} 詳細資料失敗`, err);
+          }
+        }
+      } else if (item.集數 == null) {
+        更新清單[id] = {
+          ...item,
+          集數: item.詳細?.number_of_episodes ?? null,
+        };
+        有更新 = true;
+      }
     }
   });
 
