@@ -46,11 +46,26 @@ export function 分類排序觀看進度(清單: 清單資料) {
   const 已看完: WatchItem[] = [];
   const 尚未看過: { id: string; item: Film }[] = [];
 
+  function extractTime(raw: any): number {
+    const value = raw && typeof raw === 'object' && 'watchDate' in raw ? raw.watchDate : raw;
+    if (value && typeof value.toDate === 'function') {
+      return value.toDate().getTime();
+    }
+    return value ? new Date(value).getTime() : 0;
+  }
+
   for (const [id, item] of Object.entries(清單)) {
     const 已看集 = Object.entries(item.已看紀錄?.episodes ?? {})
       .filter(([, v]) => !!v)
       .map(([k]) => k);
-    const 最後觀看時間 = item.最後觀看時間 ? new Date(item.最後觀看時間).getTime() : 0;
+    const episodeTimes = Object.values(item.已看紀錄?.episodes ?? {})
+      .filter(Boolean)
+      .map((v) => extractTime(v));
+
+    let 最後觀看時間 = item.最後觀看時間 ? new Date(item.最後觀看時間).getTime() : 0;
+    if (episodeTimes.length > 0) {
+      最後觀看時間 = Math.max(最後觀看時間, ...episodeTimes);
+    }
 
     if (已看集.length === 0) {
       尚未看過.push({ id, item });
