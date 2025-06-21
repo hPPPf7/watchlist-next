@@ -155,6 +155,10 @@ export async function acceptFriendInvite(uid: string): Promise<void> {
     avatar,
   });
   await deleteDoc(doc(db, 'users', user.uid, 'friendInvites', uid));
+  await setDoc(doc(db, 'users', uid, 'friends', user.uid), {
+    nickname: user.displayName || user.email || user.uid,
+    avatar: user.photoURL || '',
+  });
 }
 
 export async function declineFriendInvite(uid: string): Promise<void> {
