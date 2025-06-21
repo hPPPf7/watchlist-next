@@ -58,7 +58,6 @@ export function 分類排序觀看進度(清單: 清單資料) {
     const episodesWatched = Object.entries(item.已看紀錄?.episodes ?? {}).filter(([, v]) => !!v);
     const watchTimes = episodesWatched.map(([, v]) => extractTime(v));
     const 最近觀看時間 = watchTimes.length > 0 ? Math.max(...watchTimes) : 0;
-
     const 加入時間 = item.加入時間 ? new Date(item.加入時間).getTime() : 0;
 
     const watchedCount = episodesWatched.length;
@@ -67,16 +66,12 @@ export function 分類排序觀看進度(清單: 清單資料) {
 
     if (watchedCount === 0) {
       尚未看過.push({ id, item, 加入時間 });
-    } else if (watchedCount >= totalCount && watchedCount >= airedCount) {
-      // 看完全部
-      已看完.push({ id, item, 最後觀看時間: 最近觀看時間 });
+    } else if (watchedCount >= totalCount && airedCount > watchedCount) {
+      有新集數未看.push({ id, item, 最後觀看時間: 最近觀看時間, 新集: true });
+    } else if (watchedCount < airedCount) {
+      有紀錄中.push({ id, item, 最後觀看時間: 最近觀看時間 });
     } else {
-      const hasNew = watchedCount >= totalCount && airedCount > totalCount;
-      if (hasNew) {
-        有新集數未看.push({ id, item, 最後觀看時間: 最近觀看時間, 新集: true });
-      } else {
-        有紀錄中.push({ id, item, 最後觀看時間: 最近觀看時間 });
-      }
+      已看完.push({ id, item, 最後觀看時間: 最近觀看時間 });
     }
   }
 
