@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { HorizontalFilmCard } from '@/components/HorizontalFilmCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 分類排序觀看進度 } from '@/utils/sortLogic';
-import { formatCountdown, formatDate } from '@/lib/date';
+import { formatCountdown, formatDate, parseLocalDate } from '@/lib/date';
 import {
   getNextEpisodeInfo,
   type NextEpisode,
@@ -325,7 +325,17 @@ export default function SeriesProgressPage() {
                     })()}
                   </p>
                   {新集 && (
-                    <span className="ml-2 rounded bg-red-500 px-1 text-xs text-white">NEW</span>
+                    <span className="ml-2 rounded bg-red-500 px-1 text-xs text-white">
+                      {(() => {
+                        const info = 下一集資訊[item.tmdbId];
+                        if (!info?.airDate) return 'NEW';
+                        const diffDays = Math.floor(
+                          (new Date().getTime() - parseLocalDate(info.airDate).getTime()) /
+                            (1000 * 60 * 60 * 24),
+                        );
+                        return diffDays > 0 ? `NEW (${diffDays}天前)` : 'NEW';
+                      })()}
+                    </span>
                   )}
                 </HorizontalFilmCard>
               ))}

@@ -2,6 +2,7 @@ export interface NextEpisode {
   season: number;
   episode: number;
   name?: string;
+  airDate?: string;
 }
 
 import type { Film } from '@/types/Film';
@@ -27,12 +28,15 @@ export async function getNextEpisodeInfo(item: Film): Promise<NextEpisode | null
       const key = `${seasonNum}-${ep}`;
       if (!watched.has(key)) {
         let name: string | undefined;
+        let airDate: string | undefined;
         const next = item.詳細?.next_episode_to_air;
         const last = item.詳細?.last_episode_to_air;
         if (next && next.season_number === seasonNum && next.episode_number === ep) {
           name = next.name;
+          airDate = next.air_date;
         } else if (last && last.season_number === seasonNum && last.episode_number === ep) {
           name = last.name;
+          airDate = last.air_date;
         }
         if (!name) {
           const cacheKey = `${item.tmdbId}-${seasonNum}`;
@@ -51,15 +55,21 @@ export async function getNextEpisodeInfo(item: Film): Promise<NextEpisode | null
           }
           const epInfo = episodes.find((e: any) => e.episode_number === ep);
           name = epInfo?.name;
+          airDate = epInfo?.air_date;
         }
-        return { season: seasonNum, episode: ep, name };
+        return { season: seasonNum, episode: ep, name, airDate };
       }
     }
   }
 
   if (item.詳細?.next_episode_to_air) {
     const n = item.詳細.next_episode_to_air;
-    return { season: n.season_number, episode: n.episode_number, name: n.name };
+    return {
+      season: n.season_number,
+      episode: n.episode_number,
+      name: n.name,
+      airDate: n.air_date,
+    };
   }
 
   return null;
