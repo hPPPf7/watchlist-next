@@ -655,34 +655,36 @@ export function DetailDialog({
                               </>
                             ) : (
                               <>
-                                <div className="space-y-2">
-                                  <StyledCalendar
-                                    selected={觀看日期 instanceof Date ? 觀看日期 : undefined}
-                                    onSelect={(date) => {
-                                      if (!date) return;
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                  <div className="space-y-2">
+                                    <StyledCalendar
+                                      selected={觀看日期 instanceof Date ? 觀看日期 : undefined}
+                                      onSelect={(date) => {
+                                        if (!date) return;
 
-                                      const today = new Date();
-                                      today.setHours(0, 0, 0, 0);
+                                        const today = new Date();
+                                        today.setHours(0, 0, 0, 0);
 
-                                      if (date <= today) {
-                                        設定觀看日期(date);
-                                        設定輸入錯誤(false);
-                                        設定錯誤訊息('');
-                                      } else {
-                                        設定輸入錯誤(true);
-                                        設定錯誤訊息('日期不能晚於今天');
-                                      }
-                                    }}
-                                  />
-                                  {觀看日期 !== null && (
-                                    <p className="text-sm text-zinc-300">
-                                      目前選擇：
-                                      {觀看日期 === 'forgot'
-                                        ? '忘記日期'
-                                        : format(觀看日期 as Date, 'yyyy-MM-dd')}
-                                    </p>
-                                  )}
-                                  {輸入錯誤 && <p className="text-sm text-red-400">{錯誤訊息}</p>}
+                                        if (date <= today) {
+                                          設定觀看日期(date);
+                                          設定輸入錯誤(false);
+                                          設定錯誤訊息('');
+                                        } else {
+                                          設定輸入錯誤(true);
+                                          設定錯誤訊息('日期不能晚於今天');
+                                        }
+                                      }}
+                                    />
+                                    {觀看日期 !== null && (
+                                      <p className="text-sm text-zinc-300">
+                                        目前選擇：
+                                        {觀看日期 === 'forgot'
+                                          ? '忘記日期'
+                                          : format(觀看日期 as Date, 'yyyy-MM-dd')}
+                                      </p>
+                                    )}
+                                    {輸入錯誤 && <p className="text-sm text-red-400">{錯誤訊息}</p>}
+                                  </div>
                                   <FriendSelect
                                     friends={friends}
                                     value={選擇的朋友}
@@ -921,68 +923,71 @@ export function DetailDialog({
                                   {/* 展開日曆 */}
                                   {目前選擇的集數ID === ep.id && (
                                     <div className="rounded-b border-t border-zinc-700 bg-zinc-900 p-4">
-                                      <StyledCalendar
-                                        selected={暫存日期 ?? undefined}
-                                        onSelect={async (date) => {
-                                          if (date) {
-                                            const key = `${ep.season_number}-${ep.episode_number}`;
-                                            try {
-                                              if (!is追蹤中 && onToggleWatchlist) {
-                                                await onToggleWatchlist(film);
-                                              }
-                                              await updateEpisodeWatchDate(
-                                                film.tmdbId,
-                                                key,
-                                                format(date, 'yyyy-MM-dd'),
-                                                集數朋友[key] || [],
-                                              );
-                                              await logWatchedRecord(film.tmdbId, 'tv');
-
-                                              // ✅ 更新本地 state
-                                              設定集數日期((prev) => ({
-                                                ...prev,
-                                                [key]: date,
-                                              }));
-
-                                              const newRecords = {
-                                                ...集數日期,
-                                                [key]: date,
-                                              };
-                                              const watchedCount =
-                                                Object.values(newRecords).filter(Boolean).length;
-                                              const aired = getAiredEpisodes(詳細資料);
-                                              if (watchedCount >= aired) {
-                                                try {
-                                                  await updateEpisodeCount(film.tmdbId, aired);
-                                                } catch (err) {
-                                                  console.warn('⚠️ 更新集數失敗', err);
+                                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                        <StyledCalendar
+                                          selected={暫存日期 ?? undefined}
+                                          onSelect={async (date) => {
+                                            if (date) {
+                                              const key = `${ep.season_number}-${ep.episode_number}`;
+                                              try {
+                                                if (!is追蹤中 && onToggleWatchlist) {
+                                                  await onToggleWatchlist(film);
                                                 }
-                                              }
+                                                await updateEpisodeWatchDate(
+                                                  film.tmdbId,
+                                                  key,
+                                                  format(date, 'yyyy-MM-dd'),
+                                                  集數朋友[key] || [],
+                                                );
+                                                await logWatchedRecord(film.tmdbId, 'tv');
 
-                                              設定目前選擇的集數ID(null);
-                                              await onUpdated?.();
-                                              toast.success(
-                                                `✅ 已儲存：${format(date, 'yyyy/MM/dd')}`,
-                                              );
-                                            } catch (err) {
-                                              console.error('儲存集數日期失敗', err);
-                                              toast.error('儲存失敗');
+                                                // ✅ 更新本地 state
+                                                設定集數日期((prev) => ({
+                                                  ...prev,
+                                                  [key]: date,
+                                                }));
+
+                                                const newRecords = {
+                                                  ...集數日期,
+                                                  [key]: date,
+                                                };
+                                                const watchedCount =
+                                                  Object.values(newRecords).filter(Boolean).length;
+                                                const aired = getAiredEpisodes(詳細資料);
+                                                if (watchedCount >= aired) {
+                                                  try {
+                                                    await updateEpisodeCount(film.tmdbId, aired);
+                                                  } catch (err) {
+                                                    console.warn('⚠️ 更新集數失敗', err);
+                                                  }
+                                                }
+
+                                                設定目前選擇的集數ID(null);
+                                                await onUpdated?.();
+                                                toast.success(
+                                                  `✅ 已儲存：${format(date, 'yyyy/MM/dd')}`,
+                                                );
+                                              } catch (err) {
+                                                console.error('儲存集數日期失敗', err);
+                                                toast.error('儲存失敗');
+                                              }
                                             }
+                                          }}
+                                        />
+                                        <FriendSelect
+                                          friends={friends}
+                                          value={
+                                            集數朋友[`${ep.season_number}-${ep.episode_number}`] ||
+                                            []
                                           }
-                                        }}
-                                      />
-                                      <FriendSelect
-                                        friends={friends}
-                                        value={
-                                          集數朋友[`${ep.season_number}-${ep.episode_number}`] || []
-                                        }
-                                        onChange={(v) =>
-                                          設定集數朋友((prev) => ({
-                                            ...prev,
-                                            [`${ep.season_number}-${ep.episode_number}`]: v,
-                                          }))
-                                        }
-                                      />
+                                          onChange={(v) =>
+                                            設定集數朋友((prev) => ({
+                                              ...prev,
+                                              [`${ep.season_number}-${ep.episode_number}`]: v,
+                                            }))
+                                          }
+                                        />
+                                      </div>
                                     </div>
                                   )}
                                 </div>
