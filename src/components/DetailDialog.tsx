@@ -250,7 +250,7 @@ export function DetailDialog({
         }
       })();
     }
-  }, [open, film]);
+  }, [open, film, initialSeason]);
 
   async function 載入集數(tvId: number, seasonNumber: number) {
     try {

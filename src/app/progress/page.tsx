@@ -94,7 +94,7 @@ export default function SeriesProgressPage() {
     return () => {
       cancelled = true;
     };
-  }, [listKeys, 載入中]);
+  }, [listKeys, 載入中, 清單]);
 
   useEffect(() => {
     async function loadData() {

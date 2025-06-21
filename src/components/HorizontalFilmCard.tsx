@@ -13,10 +13,17 @@ interface Props {
 export function HorizontalFilmCard({ film, onClick, children, className }: Props) {
   return (
     <div
+      role="button"
+      tabIndex={0}
       className={`flex cursor-pointer items-center gap-4 rounded-2xl bg-zinc-800 p-4 transition hover:bg-zinc-700 ${
         className || ''
       }`}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick?.();
+        }
+      }}
     >
       <CardImageWithFallback
         src={film.封面圖}

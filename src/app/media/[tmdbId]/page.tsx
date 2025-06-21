@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getTMDbDetail } from '@/lib/api';
 import { Film } from '@/types/Film';
@@ -20,13 +20,13 @@ export default function MediaPage({ params }: { params: Promise<{ tmdbId: string
       console.warn('⚠️ 無效的 tmdbId，返回首頁');
       router.push('/');
     }
-  }, [tmdbId, tmdbIdNum]);
+  }, [tmdbId, tmdbIdNum, router]);
 
   const [film, setFilm] = useState<Film | null>(null);
   const [追蹤狀態, 設定追蹤狀態] = useState<Record<number, boolean | 'loading'>>({});
   const [watchlistMap, setWatchlistMap] = useState<Record<string, Film>>({});
 
-  async function 載入資料() {
+  const 載入資料 = useCallback(async () => {
     try {
       const watchlist = await getWatchlist();
       setWatchlistMap(watchlist);
@@ -50,13 +50,13 @@ export default function MediaPage({ params }: { params: Promise<{ tmdbId: string
     } catch (e) {
       console.error('❌ 載入資料失敗', e);
     }
-  }
+  }, [tmdbIdNum]);
 
   useEffect(() => {
     if (使用者) {
       載入資料();
     }
-  }, [使用者, tmdbIdNum]);
+  }, [使用者, tmdbIdNum, 載入資料]);
 
   async function handleToggleWatchlist(film: Film) {
     const isFollowed = !!watchlistMap[film.tmdbId.toString()];

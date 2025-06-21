@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useUser } from '@/hooks/useUser';
 import { getWatchlist, addToWatchlist, removeFromWatchlist } from '@/lib/watchlist';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { LastUpdatedHint } from '@/components/LastUpdatedHint';
@@ -21,8 +20,6 @@ import {
 } from '@/lib/popular';
 
 export default function SearchPage() {
-  const { 使用者 } = useUser();
-  const 建議容器 = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [關鍵字, 設定關鍵字] = useState('');
   const [結果列表, 設定結果列表] = useState<Film[]>([]);
@@ -32,7 +29,6 @@ export default function SearchPage() {
   const [搜尋中, 設定搜尋中] = useState(false);
   const [錯誤訊息, 設定錯誤訊息] = useState('');
   const [顯示錯誤, 設定顯示錯誤] = useState(false);
-  const [正在組字, 設定正在組字] = useState(false);
   const [熱門電影_popular, 設定熱門電影_popular] = useState<Film[]>([]);
   const [熱門電影_nowPlaying, 設定熱門電影_nowPlaying] = useState<Film[]>([]);
   const [熱門電影_topRated, 設定熱門電影_topRated] = useState<Film[]>([]);
@@ -49,52 +45,55 @@ export default function SearchPage() {
   const [大家感興趣_movie, 設定大家感興趣_movie] = useState<Film[]>([]);
   const [大家感興趣_tv, 設定大家感興趣_tv] = useState<Film[]>([]);
 
-  async function 搜尋影片(文字 = 關鍵字, 類型 = 篩選類型) {
-    if (!文字.trim()) {
-      設定結果列表([]);
-      return;
-    }
+  const 搜尋影片 = useCallback(
+    async (文字 = 關鍵字, 類型 = 篩選類型) => {
+      if (!文字.trim()) {
+        設定結果列表([]);
+        return;
+      }
 
-    設定搜尋中(true);
-    設定錯誤訊息('');
+      設定搜尋中(true);
+      設定錯誤訊息('');
 
-    try {
-      const 結果 = await searchTMDb(文字);
+      try {
+        const 結果 = await searchTMDb(文字);
 
-      const 篩選後 = 結果.filter((r: any) => {
-        if (類型 === 'all') return r.media_type === 'movie' || r.media_type === 'tv';
-        return r.media_type === 類型;
-      });
+        const 篩選後 = 結果.filter((r: any) => {
+          if (類型 === 'all') return r.media_type === 'movie' || r.media_type === 'tv';
+          return r.media_type === 類型;
+        });
 
-      const 整理 = await Promise.all(
-        篩選後.map(async (項: any) => {
-          const 詳細 = await getTMDbDetail(項.media_type, 項.id);
-          return {
-            tmdbId: 項.id,
-            類型: 項.media_type as 'movie' | 'tv',
-            title: 項.title || 項.name,
-            year: (項.release_date || 項.first_air_date || '').slice(0, 4),
-            封面圖: 詳細.poster_path
-              ? `https://image.tmdb.org/t/p/w500${詳細.poster_path}`
-              : '/no-image.png',
-            背景圖: 詳細.backdrop_path
-              ? `https://image.tmdb.org/t/p/w780${詳細.backdrop_path}`
-              : '/no-backdrop.png',
-            詳細,
-          };
-        }),
-      );
+        const 整理 = await Promise.all(
+          篩選後.map(async (項: any) => {
+            const 詳細 = await getTMDbDetail(項.media_type, 項.id);
+            return {
+              tmdbId: 項.id,
+              類型: 項.media_type as 'movie' | 'tv',
+              title: 項.title || 項.name,
+              year: (項.release_date || 項.first_air_date || '').slice(0, 4),
+              封面圖: 詳細.poster_path
+                ? `https://image.tmdb.org/t/p/w500${詳細.poster_path}`
+                : '/no-image.png',
+              背景圖: 詳細.backdrop_path
+                ? `https://image.tmdb.org/t/p/w780${詳細.backdrop_path}`
+                : '/no-backdrop.png',
+              詳細,
+            };
+          }),
+        );
 
-      設定結果列表(整理);
-    } catch (error: any) {
-      console.error(error);
-      顯示錯誤訊息(error.message || '⚠️ 搜尋失敗，請稍後再試');
-      設定結果列表([]);
-    } finally {
-      設定搜尋中(false);
-      inputRef.current?.focus();
-    }
-  }
+        設定結果列表(整理);
+      } catch (error: any) {
+        console.error(error);
+        顯示錯誤訊息(error.message || '⚠️ 搜尋失敗，請稍後再試');
+        設定結果列表([]);
+      } finally {
+        設定搜尋中(false);
+        inputRef.current?.focus();
+      }
+    },
+    [關鍵字, 篩選類型],
+  );
 
   const fetchWatchlist = useCallback(async () => {
     try {
@@ -106,38 +105,41 @@ export default function SearchPage() {
     }
   }, []);
 
-  async function handleToggleWatchlist(film: Film) {
-    if (!film) return;
+  const handleToggleWatchlist = useCallback(
+    async (film: Film) => {
+      if (!film) return;
 
-    try {
-      console.log('開始切換追蹤狀態', film);
+      try {
+        console.log('開始切換追蹤狀態', film);
 
-      const is追蹤中 = !!追蹤狀態[film.tmdbId];
+        const is追蹤中 = !!追蹤狀態[film.tmdbId];
 
-      設定追蹤狀態((prev) => ({
-        ...prev,
-        [film.tmdbId]: 'loading',
-      }));
+        設定追蹤狀態((prev) => ({
+          ...prev,
+          [film.tmdbId]: 'loading',
+        }));
 
-      if (is追蹤中) {
-        console.log('嘗試移除：', film.tmdbId);
-        await removeFromWatchlist(film.tmdbId);
-        console.log('✅ 成功取消追蹤', film.tmdbId);
-      } else {
-        await addToWatchlist(film);
-        await logAddToWatchlist(film.tmdbId, film.類型);
-        console.log('✅ 成功加入追蹤', film.tmdbId);
+        if (is追蹤中) {
+          console.log('嘗試移除：', film.tmdbId);
+          await removeFromWatchlist(film.tmdbId);
+          console.log('✅ 成功取消追蹤', film.tmdbId);
+        } else {
+          await addToWatchlist(film);
+          await logAddToWatchlist(film.tmdbId, film.類型);
+          console.log('✅ 成功加入追蹤', film.tmdbId);
+        }
+
+        // 🎯 這裡改：直接更新本地追蹤狀態，不用每次重抓
+        設定追蹤狀態((prev) => ({
+          ...prev,
+          [film.tmdbId]: !is追蹤中,
+        }));
+      } catch (error) {
+        console.error('❌ 切換追蹤失敗', error);
       }
-
-      // 🎯 這裡改：直接更新本地追蹤狀態，不用每次重抓
-      設定追蹤狀態((prev) => ({
-        ...prev,
-        [film.tmdbId]: !is追蹤中,
-      }));
-    } catch (error) {
-      console.error('❌ 切換追蹤失敗', error);
-    }
-  }
+    },
+    [追蹤狀態],
+  );
 
   useEffect(() => {
     // 每次關鍵字改變時，自動捲到頂部
@@ -148,7 +150,7 @@ export default function SearchPage() {
     if (關鍵字.trim()) {
       搜尋影片(關鍵字, 篩選類型);
     }
-  }, [關鍵字, 篩選類型]);
+  }, [關鍵字, 篩選類型, 搜尋影片]);
 
   useEffect(() => {
     fetchWatchlist();
@@ -322,7 +324,8 @@ export default function SearchPage() {
 
         {/* ⚠️ 錯誤提示 */}
         {(錯誤訊息 || 錯誤動畫中) && (
-          <div
+          <button
+            type="button"
             className={cn(
               'mt-3 bg-red-600/20 text-red-400 rounded p-3 text-center text-sm transition-all duration-500 cursor-pointer',
               顯示錯誤 ? 'opacity-100 animate-fade-in' : 'opacity-0 animate-fade-out',
@@ -336,7 +339,7 @@ export default function SearchPage() {
             }}
           >
             {錯誤訊息}
-          </div>
+          </button>
         )}
 
         {/* 📋 清單內容 */}

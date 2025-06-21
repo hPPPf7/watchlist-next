@@ -119,7 +119,7 @@ export default function MovieTrackerPage() {
     return () => {
       cancelled = true;
     };
-  }, [listKeys, 載入中]);
+  }, [listKeys, 載入中, 清單]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
